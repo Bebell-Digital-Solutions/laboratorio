@@ -1,0 +1,1370 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Auditor - Diagnóstico de Presencia de Marca por Bebell Digital Solutions.</title>
+
+    <!-- META DESCRIPTION -->
+    <meta name="description" content="Brand Auditor por Bebell Digital Solutions — Diagnóstico de presencia de marca impulsado por IA. Evalúa la visibilidad, impacto social, SEO y consistencia de tu marca. Obtén un plan de acción al instante.">
+    
+    <!-- Additional SEO & Open Graph for better sharing -->    
+    <meta name="author" content="Bebell Digital Solutions">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Brand Auditor - Diagnóstico de Presencia de Marca">
+    <meta property="og:description" content="Herramienta integral de auditoría de marca. Mide tu presencia digital, señales sociales, rendimiento SEO y consistencia. Impulsado por Bebell Digital Solutions.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://placehold.co/1200x630/0a192f/64ffda?text=Brand+Auditor">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://bucket.mlcdn.com/a/3336/3336910/images/1ea8c6c09b5040e7134f477eab7a753c82e67f17.png">
+
+    <!-- Tailwind CSS Setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sys: {
+                            bg: '#f2f1fb',
+                            primary: '#8b84f5',
+                            secondary: '#e07dd1',
+                            title: '#4b4998',
+                            text: '#707070',
+                            card: '#ffffff'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(139, 132, 245, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f2f1fb;
+            color: #707070;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .gradient-text {
+            background-image: linear-gradient(90deg, #8b84f5, #e07dd1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .scale-in {
+            animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        @keyframes scaleIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Custom Radio/Checkbox styling */
+        .custom-radio:checked + div, .custom-checkbox:checked + div {
+            border-color: #8b84f5;
+            background-color: #f2f1fb;
+        }
+        .custom-radio:checked + div .radio-dot {
+            background-color: #8b84f5;
+            transform: scale(1);
+        }
+        .custom-checkbox:checked + div .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 132, 245, 0.2);
+            border-left-color: #8b84f5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-interactive {
+            transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-interactive:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(139, 132, 245, 0.3);
+        }
+        .btn-interactive:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        /* PDF Print Styles for Clean Reporting */
+        @media print {
+            body { background-color: #ffffff !important; margin: 0; padding: 0; }
+            main { box-shadow: none !important; max-width: 100% !important; border: none !important; }
+            .btn-interactive, button, #step-indicator, .absolute.top-4 { display: none !important; }
+            #recommendations-container { max-height: none !important; overflow: visible !important; }
+            .bg-sys-bg { background-color: #f9f9f9 !important; border: 1px solid #eee !important; }
+            #form-bg-layer { display: none !important; }
+        }
+
+        /* Toast Animations */
+        .toast-enter {
+            animation: toastEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast-exit {
+            animation: toastExit 0.3s ease-in forwards;
+        }
+        @keyframes toastEnter {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toastExit {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        }
+        
+        /* Error highlight class */
+        .input-error {
+            border-color: #ef4444 !important; 
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-5 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <!-- Main App Container -->
+    <main class="w-full max-w-[980px] bg-sys-card rounded-2xl shadow-soft relative overflow-hidden flex flex-col min-h-[600px]">
+        
+        <!-- Dynamic Background Layer (Pages 1 to 6) -->
+        <div id="form-bg-layer" class="absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-700 opacity-0 pointer-events-none" style="background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/3729823166a669c2a97898d8aa090735a2e8b704.jpeg');">
+            <div class="absolute inset-0 bg-white/70 backdrop-blur-[2px]"></div>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="absolute top-4 right-4 z-50">
+            <button onclick="toggleLanguage()" class="flex items-center gap-2 bg-sys-bg text-sys-title px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-100 transition-colors">
+                <span id="lang-en" class="text-gray-400">EN</span>
+                <span class="text-gray-300">|</span>
+                <span id="lang-es" class="text-sys-primary">ES</span>
+            </button>
+        </div>
+
+        <!-- Page Indicator -->
+        <div id="step-indicator" class="absolute top-5 left-6 z-40 text-sm font-bold text-sys-primary hidden bg-sys-primary/10 px-3 py-1 rounded-full">
+            <span data-i18n="page">Página</span> <span id="current-page">1</span>/6
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-container" class="w-full h-2 bg-gray-100 hidden mt-[60px] sm:mt-0 relative z-10">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-sys-primary to-sys-secondary transition-all duration-500 ease-out w-0"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 p-6 sm:p-12 flex flex-col justify-center relative z-10">
+
+            <!-- STEP 0: Landing -->
+            <section id="step-0" class="step-section text-center max-w-[780px] mx-auto fade-in-up">
+                <div class="mb-8 flex justify-center">
+                    <img src="https://bucket.mlcdn.com/a/3336/3336910/images/3299633b8e4ab14112a8f3b2a7c004fa6fb021d1.png" alt="Brand Logo" class="h-28 object-contain transition-transform duration-300 ease-in-out hover:scale-110">
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-sys-title mb-4 max-w-[780px] mx-auto leading-tight">
+                    <span data-i18n="step0_title1">Descubre el</span><br>
+                    <span class="gradient-text" data-i18n="step0_title2">Verdadero Potencial de tu Marca</span>
+                </h1>
+                <p class="text-lg text-sys-text mb-8" data-i18n="step0_desc">Realiza nuestro diagnóstico para descubrir brechas estratégicas y obtén un plan de acción.</p>
+                <button onclick="nextStep(this)" class="btn-interactive bg-sys-primary text-white font-semibold py-3 px-8 rounded-xl text-lg min-w-[220px]" data-i18n="step0_btn">
+                    Iniciar Auditoría Gratuita
+                </button>
+            </section>
+
+            <!-- STEP 1: BRAND IDENTITY & GOALS -->
+            <section id="step-1" class="step-section hidden max-w-2xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step1_title">Identidad de Marca y Metas</h2>
+                <div class="space-y-5">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="s1_name_label">Tu Nombre *</label>
+                            <input type="text" id="input-name" data-i18n-ph="s1_name_ph" placeholder="Juan Pérez" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none transition-all bg-white/80 backdrop-blur-sm">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="s1_email_label">Correo Electrónico *</label>
+                            <input type="email" id="input-email" data-i18n-ph="s1_email_ph" placeholder="juan@empresa.com" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none transition-all bg-white/80 backdrop-blur-sm">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="s1_bizname_label">Nombre del Negocio</label>
+                        <input type="text" id="input-bizname" data-i18n-ph="s1_bizname_ph" placeholder="Mi Empresa" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none transition-all bg-white/80 backdrop-blur-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-3" data-i18n="s1_biztype_label">Tipo de Negocio *</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="service" class="custom-radio sr-only">
+                                <div class="px-3 py-2 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 text-sm">
+                                    <div class="w-3 h-3 rounded-full border border-gray-300 mr-2 flex-shrink-0 flex items-center justify-center"><div class="radio-dot w-1.5 h-1.5 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_service">Servicios</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="ecommerce" class="custom-radio sr-only">
+                                <div class="px-3 py-2 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 text-sm">
+                                    <div class="w-3 h-3 rounded-full border border-gray-300 mr-2 flex-shrink-0 flex items-center justify-center"><div class="radio-dot w-1.5 h-1.5 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_ecom">E-commerce</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="personal_brand" class="custom-radio sr-only">
+                                <div class="px-3 py-2 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 text-sm">
+                                    <div class="w-3 h-3 rounded-full border border-gray-300 mr-2 flex-shrink-0 flex items-center justify-center"><div class="radio-dot w-1.5 h-1.5 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_personal">Personal</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="local" class="custom-radio sr-only">
+                                <div class="px-3 py-2 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 text-sm">
+                                    <div class="w-3 h-3 rounded-full border border-gray-300 mr-2 flex-shrink-0 flex items-center justify-center"><div class="radio-dot w-1.5 h-1.5 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_local">Local</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="s1_uvp_label">¿Cuál es tu propuesta de valor única? (1-2 oraciones)</label>
+                        <textarea id="input-uvp" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none transition-all bg-white/80 backdrop-blur-sm text-sm"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="s1_aud_label">Describe tu audiencia ideal (demografía, intereses)</label>
+                        <textarea id="input-audience-desc" rows="2" class="w-full px-4 py-2 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none transition-all bg-white/80 backdrop-blur-sm text-sm"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s1_cons_label">Consistencia de marca en todas las plataformas *</label>
+                        <select id="input-consistency" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="inconsistent" data-i18n="cons_inc">Inconsistente (diferentes logos, colores, tono)</option>
+                            <option value="somewhat" data-i18n="cons_some">Algo alineado (elementos visuales similares, tono varía)</option>
+                            <option value="fully" data-i18n="cons_full">Totalmente consistente (misma identidad y mensaje)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Siguiente Paso</button>
+                </div>
+            </section>
+
+            <!-- STEP 2: DIGITAL PRESENCE -->
+            <section id="step-2" class="step-section hidden max-w-2xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-2" data-i18n="step2_title">Presencia Digital</h2>
+                <p class="text-sys-text mb-6 text-sm" data-i18n="step2_desc">Selecciona las plataformas donde tienes un perfil activo.</p>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6" id="platforms-grid">
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="website" onchange="toggleWebsiteQuality()" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center" data-i18n="plat_web">Sitio Web</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="instagram" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center">Instagram</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="tiktok" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center">TikTok</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="linkedin" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center">LinkedIn</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="facebook" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center">Facebook</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="google_business" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center" data-i18n="plat_gb">Google Mi Negocio</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="youtube" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center">YouTube</span>
+                        </div>
+                    </label>
+                    <label class="relative cursor-pointer">
+                        <input type="checkbox" name="platform" value="pinterest_other" class="custom-checkbox sr-only">
+                        <div class="px-3 py-3 border border-gray-200 rounded-lg flex items-center justify-center transition-all hover:bg-white bg-white/80 text-sm h-full">
+                            <span class="font-medium text-sys-title text-center" data-i18n="plat_other">Pinterest / Otros</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div id="website-quality-container" class="hidden fade-in-up mt-6 bg-white/80 backdrop-blur-sm p-5 rounded-xl border border-sys-primary/30">
+                    <label class="block text-sm font-medium text-sys-title mb-3" data-i18n="s2_webqual_label">Calidad del sitio web:</label>
+                    <select id="input-website-quality" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 outline-none bg-white transition-all cursor-pointer">
+                        <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                        <option value="poor" data-i18n="wq_poor">Sin web / muy pobre (rota o desactualizada)</option>
+                        <option value="basic" data-i18n="wq_basic">Básica pero funcional (diseño promedio)</option>
+                        <option value="modern" data-i18n="wq_modern">Moderna, rápida, móvil, con CTA claros</option>
+                    </select>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Siguiente Paso</button>
+                </div>
+            </section>
+
+            <!-- STEP 3: WEBSITE UX & TECH SEO -->
+            <section id="step-3" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step3_title">UX del Sitio Web y SEO Técnico</h2>
+                
+                <div id="no-website-msg" class="hidden bg-orange-50 border border-orange-200 rounded-xl p-5 text-center">
+                    <p class="text-orange-800 font-medium" data-i18n="s3_no_web">Indicaste que no tienes sitio web, saltaremos esta sección técnica.</p>
+                </div>
+
+                <div id="step-3-questions" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s3_mobile_label">Adaptabilidad móvil (Responsiveness)</label>
+                        <select id="input-mobile" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="none" data-i18n="mob_none">No es adaptable</option>
+                            <option value="partial" data-i18n="mob_partial">Parcialmente (algunas páginas funcionan)</option>
+                            <option value="full" data-i18n="mob_full">Totalmente adaptable en todos los dispositivos</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s3_speed_label">Velocidad de carga (estimado)</label>
+                        <select id="input-speed" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="slow" data-i18n="spd_slow">&gt;3 segundos (lenta)</option>
+                            <option value="avg" data-i18n="spd_avg">1-3 segundos (promedio)</option>
+                            <option value="fast" data-i18n="spd_fast">&lt;1 segundo (rápida)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s3_seo_label">Etiquetas meta SEO (título y descripción)</label>
+                        <select id="input-seo" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="missing" data-i18n="seo_miss">Faltantes o por defecto (autogeneradas)</option>
+                            <option value="custom" data-i18n="seo_cust">Personalizadas en páginas clave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s3_analytics_label">Analíticas instaladas (ej. GA4, GTM)</label>
+                        <select id="input-analytics" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="no" data-i18n="ana_no">No</option>
+                            <option value="yes_passive" data-i18n="ana_pass">Sí, pero no se usan activamente</option>
+                            <option value="yes_active" data-i18n="ana_act">Sí, rastreando conversiones/metas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Siguiente Paso</button>
+                </div>
+            </section>
+
+            <!-- STEP 4: CONTENT STRATEGY -->
+            <section id="step-4" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step4_title">Estrategia de Contenido</h2>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s4_freq_label">Frecuencia de publicación (promedio)</label>
+                        <select id="input-freq" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="rarely" data-i18n="fq_rare">Nunca / Rara vez</option>
+                            <option value="weekly" data-i18n="fq_week">1-3 veces por semana</option>
+                            <option value="daily" data-i18n="fq_day">Diariamente</option>
+                            <option value="multiple" data-i18n="fq_mult">Múltiples veces al día</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s4_format_label">Mix de formatos de contenido</label>
+                        <select id="input-format" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="text_img" data-i18n="fmt_text">Mayormente texto/imágenes</option>
+                            <option value="mix" data-i18n="fmt_mix">Mix de imágenes + videos ocasionales</option>
+                            <option value="video" data-i18n="fmt_vid">Prioridad en Video (Reels, TikTok)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s4_pillars_label">¿Tienes pilares de contenido definidos?</label>
+                        <select id="input-pillars" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="no" data-i18n="pil_no">No</option>
+                            <option value="yes" data-i18n="pil_yes">Sí (2-3 temas principales constantes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s4_repurp_label">¿Tienes un sistema para reciclar contenido?</label>
+                        <select id="input-repurp" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="no" data-i18n="rep_no">No</option>
+                            <option value="sometimes" data-i18n="rep_some">A veces (reposteo manual)</option>
+                            <option value="systematic" data-i18n="rep_sys">Sistemático (video → blog → redes → email)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s4_followers_label">Total de seguidores (suma de plataformas activas)</label>
+                        <input type="number" id="input-followers" data-i18n-ph="s4_followers_ph" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none transition-all bg-white/80 backdrop-blur-sm" placeholder="ej. 5200">
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Siguiente Paso</button>
+                </div>
+            </section>
+
+            <!-- STEP 5: SEO & DISCOVERY -->
+            <section id="step-5" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step5_title">Búsqueda y Descubrimiento (SEO)</h2>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s5_rank_label">¿Apareces en la primera página de Google para tus palabras clave?</label>
+                        <select id="input-ranking" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="no" data-i18n="rnk_no">No / no estoy seguro</option>
+                            <option value="longtail" data-i18n="rnk_long">Sí, para algunas palabras específicas (long-tail)</option>
+                            <option value="main" data-i18n="rnk_main">Sí, para mis servicios/productos principales</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s5_links_label">Perfil de enlaces (calidad de sitios que te enlazan)</label>
+                        <select id="input-links" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="poor" data-i18n="lnk_poor">Pocos enlaces o spam</option>
+                            <option value="basic" data-i18n="lnk_basic">Algunos directorios locales / enlaces básicos</option>
+                            <option value="good" data-i18n="lnk_good">Sitios de autoridad en la industria</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s5_gbp_label">Optimización de Google Mi Negocio</label>
+                        <select id="input-gbp" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="none" data-i18n="gbp_none">No reclamado o vacío</option>
+                            <option value="basic" data-i18n="gbp_basic">Reclamado con info básica (dirección, horario)</option>
+                            <option value="full" data-i18n="gbp_full">Totalmente optimizado (posts, reseñas, Q&A)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Siguiente Paso</button>
+                </div>
+            </section>
+
+            <!-- STEP 6: CONVERSION & REPUTATION -->
+            <section id="step-6" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step6_title">Conversión y Reputación</h2>
+                
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s6_lead_label">Mecanismo de captura de leads</label>
+                        <select id="input-lead" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="none" data-i18n="ld_none">Ninguno / solo formulario de contacto</option>
+                            <option value="newsletter" data-i18n="ld_news">Suscripción a newsletter</option>
+                            <option value="magnet" data-i18n="ld_mag">Lead magnet + secuencia automática de emails</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s6_reviews_label">Reseñas y calificaciones de clientes</label>
+                        <select id="input-reviews" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="low" data-i18n="rev_low">Sin reseñas o menos de 10</option>
+                            <option value="mid" data-i18n="rev_mid">10-50 reseñas, promedio 4+ estrellas</option>
+                            <option value="high" data-i18n="rev_high">50+ reseñas, promedio 4.5+ estrellas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s6_tests_label">Testimonios / casos de éxito visibles</label>
+                        <select id="input-tests" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="no" data-i18n="tst_no">No</option>
+                            <option value="quotes" data-i18n="tst_quotes">Sí, algunas citas en web/redes</option>
+                            <option value="case" data-i18n="tst_case">Casos de éxito detallados con resultados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-2" data-i18n="s6_contact_label">Facilidad de contacto (teléfono, WhatsApp)</label>
+                        <select id="input-contact" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 focus:border-sys-primary outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="opt_select">Selecciona una opción...</option>
+                            <option value="hard" data-i18n="cnt_hard">Difícil de encontrar</option>
+                            <option value="visible" data-i18n="cnt_vis">Visible pero sin clic para chatear</option>
+                            <option value="easy" data-i18n="cnt_easy">Botón de contacto a un clic / flotante</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Atrás</button>
+                    <button onclick="processResults(this)" class="btn-interactive bg-sys-primary text-white font-semibold py-2 px-6 rounded-lg shadow-lg min-w-[180px]" data-i18n="btn_analyze">Calcular Puntuación</button>
+                </div>
+            </section>
+
+            <!-- RESULTS DASHBOARD -->
+            <section id="results-dashboard" class="step-section hidden w-full fade-in-up">
+                
+                <!-- Top Header -->
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-6 flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
+                    <div>
+                        <h2 class="text-2xl font-bold text-sys-title" data-i18n="res_health">Puntuación de Marca</h2>
+                        <p id="benchmark-line" class="text-sys-text mt-1 text-sm font-medium"></p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-5xl font-black text-sys-primary" id="final-score-text">0</div>
+                        <div class="text-left leading-tight text-sm font-semibold text-gray-400">DE<br>100</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-6 items-start">
+                    
+                    <!-- Left: Radar Chart -->
+                    <div class="w-full md:w-1/2 bg-white rounded-2xl border border-gray-100 shadow-sm p-4 relative">
+                        <h3 class="text-sm font-bold text-sys-title mb-4 text-center uppercase tracking-wider" data-i18n="res_radar_title">Análisis por Segmentos</h3>
+                        <div class="relative w-full aspect-square max-h-[300px] mx-auto">
+                            <canvas id="scoreChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right: Segments Breakdown -->
+                    <div class="w-full md:w-1/2 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4" id="segment-breakdown">
+                        <!-- Injected via JS -->
+                    </div>
+
+                </div>
+
+                <!-- Bottom: Action Plan -->
+                <div class="mt-6 bg-white rounded-2xl border border-sys-primary/20 shadow-sm p-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-100 pb-4 mb-5 gap-4">
+                        <h3 class="text-xl font-bold text-sys-title" data-i18n="res_plan_title">Plan de Acción Estratégico (30 Días)</h3>
+                        <button onclick="window.print()" class="btn-interactive bg-sys-bg text-sys-title font-semibold py-2 px-4 rounded-lg text-sm border border-gray-200 shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            <span data-i18n="res_pdf_btn">Descargar Reporte PDF</span>
+                        </button>
+                    </div>
+                    
+                    <div id="recommendations-container" class="space-y-4">
+                        <!-- Recs injected here -->
+                    </div>
+
+                    <div class="mt-8 bg-sys-bg rounded-xl p-5 border border-sys-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h4 class="font-bold text-sys-title" data-i18n="res_cta_title">¿Listo para mejorar?</h4>
+                            <p class="text-sm text-sys-text" data-i18n="res_cta_desc">Reserva una llamada estratégica para revisar tu auditoría.</p>
+                        </div>
+                        <button class="btn-interactive bg-sys-title text-white font-semibold py-3 px-6 rounded-xl whitespace-nowrap" data-i18n="res_cta_btn">Reservar Llamada</button>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- OVERLAYS -->
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm z-40 flex flex-col items-center justify-center fade-in">
+            <div class="spinner mb-6"></div>
+            <h3 class="text-xl font-bold text-sys-title" data-i18n="load_analyzing">Analizando tu marca...</h3>
+            <p class="text-sys-text mt-2 text-sm text-center max-w-xs"><span data-i18n="load_desc1">Calculando puntuaciones de 6</span> <span id="loading-biz-type" class="font-semibold hidden"></span> <span data-i18n="load_desc2">segmentos clave.</span></p>
+        </div>
+
+        <!-- Success Modal Overlay -->
+        <div id="success-modal-overlay" class="hidden absolute inset-0 bg-sys-title/40 backdrop-blur-sm z-50 flex items-center justify-center fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-[400px] w-[90%] p-8 text-center scale-in">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                    <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-sys-title mb-2" data-i18n="succ_title">Tu reporte está listo</h3>
+                <p class="text-sys-text mb-8" data-i18n="succ_desc">Hemos analizado tu presencia y calculado tus puntuaciones.</p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="showResults()" class="btn-interactive w-full bg-sys-primary text-white font-semibold py-3 px-4 rounded-xl" data-i18n="succ_btn_view">Ver Resultados</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-sm text-sys-text z-10 relative">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+            <a href="#" class="hover:text-sys-title transition-colors underline" data-i18n="footer_privacy">Política de Privacidad</a>
+            <span class="hidden md:inline text-gray-300">|</span>
+            <span>Powered with ⚡️ by <a href="https://bebelldigitalsolutions.com" target="_blank" class="font-bold hover:text-sys-primary transition-colors">Bebell Digital Solutions</a></span>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CORE DATA & STATE ---
+        const state = {
+            language: localStorage.getItem('audit_lang') || 'es', // Hard fallback to 'es'
+            currentStep: 0,
+            totalSteps: 6,
+            data: {
+                name: '', email: '', bizname: '', business_type: '', uvp: '', audience: '', consistency: '',
+                platforms: [], website_quality: '',
+                mobile: '', speed: '', seo: '', analytics: '',
+                freq: '', format: '', pillars: '', repurpose: '', followers: 0,
+                ranking: '', links: '', gbp: '',
+                lead: '', reviews: '', tests: '', contact: ''
+            },
+            results: {
+                totalScore: 0,
+                segments: [], // [{name, raw, max, pct}]
+                recommendations: []
+            }
+        };
+
+        // --- 1.5 TRANSLATIONS DB ---
+        const translations = {
+            en: {
+                "page": "Page", "saving": "Saving...", "res_pdf_btn": "Download PDF Report",
+                "step0_title1": "Discover Your Brand's", "step0_title2": "True Potential",
+                "step0_desc": "Take our strategic diagnostic to uncover gaps in your digital presence and get a custom action plan.",
+                "step0_btn": "Start Free Audit",
+                "opt_select": "Select an option...", "btn_next": "Next Step", "btn_back": "Back",
+                "step1_title": "Brand Identity & Goals",
+                "s1_name_label": "Your Name *", "s1_name_ph": "John Doe",
+                "s1_email_label": "Email Address *", "s1_email_ph": "john@company.com",
+                "s1_bizname_label": "Business Name", "s1_bizname_ph": "Acme Corp",
+                "s1_biztype_label": "Business Type *",
+                "biz_service": "Service", "biz_ecom": "E-commerce", "biz_personal": "Personal", "biz_local": "Local",
+                "s1_uvp_label": "What is your unique value proposition? (1-2 sentences)",
+                "s1_aud_label": "Describe your ideal target audience (e.g., demographics, interests)",
+                "s1_cons_label": "Overall brand consistency across platforms *",
+                "cons_inc": "Inconsistent (different logos, colours, tone of voice)",
+                "cons_some": "Somewhat aligned (similar visuals but tone varies)",
+                "cons_full": "Fully consistent (same visual identity + messaging everywhere)",
+                "step2_title": "Digital Presence",
+                "step2_desc": "Select all platforms where you have an active, optimised profile.",
+                "plat_web": "Website", "plat_gb": "Google Business Profile", "plat_other": "Pinterest / Others",
+                "s2_webqual_label": "Website quality:",
+                "wq_poor": "No website / very poor (broken or outdated)",
+                "wq_basic": "Basic but functional (information is there, design is average)",
+                "wq_modern": "Modern, fast, mobile-friendly, with clear calls-to-action",
+                "step3_title": "Website UX & Technical SEO",
+                "s3_no_web": "You indicated you don't have a website, so we will skip this technical section.",
+                "s3_mobile_label": "Mobile responsiveness",
+                "mob_none": "Not responsive", "mob_partial": "Partially responsive (some pages work)", "mob_full": "Fully responsive (works perfectly on all devices)",
+                "s3_speed_label": "Page load speed (estimate)",
+                "spd_slow": ">3 seconds (slow)", "spd_avg": "1-3 seconds (average)", "spd_fast": "<1 second (fast)",
+                "s3_seo_label": "SEO meta tags (title & description)",
+                "seo_miss": "Missing or default (auto-generated)", "seo_cust": "Customised on key pages (home, services, product)",
+                "s3_analytics_label": "Analytics installed (e.g., GA4, GTM)",
+                "ana_no": "No", "ana_pass": "Yes, but not actively used", "ana_act": "Yes, and tracking conversions / goals",
+                "step4_title": "Content Strategy & Activity",
+                "s4_freq_label": "Posting frequency (average across main platforms)",
+                "fq_rare": "Never / Rarely", "fq_week": "1-3 times per week", "fq_day": "Daily", "fq_mult": "Multiple times per day",
+                "s4_format_label": "Content format mix",
+                "fmt_text": "Mostly text/images (photos, text posts)", "fmt_mix": "Mix of images + occasional video", "fmt_vid": "Video-first (Reels, TikTok, YouTube Shorts)",
+                "s4_pillars_label": "Do you have defined content pillars?",
+                "pil_no": "No", "pil_yes": "Yes (2-3 main topics you cover consistently)",
+                "s4_repurp_label": "Do you have a system for repurposing content?",
+                "rep_no": "No", "rep_some": "Sometimes (manually repost a few pieces)", "rep_sys": "Systematic (e.g., video → blog → social → email)",
+                "s4_followers_label": "Total followers / subscribers (sum across active platforms)",
+                "s4_followers_ph": "e.g. 5200",
+                "step5_title": "Search & Discovery (SEO)",
+                "s5_rank_label": "Do you rank on the first page of Google for your main keywords?",
+                "rnk_no": "No / not sure", "rnk_long": "Yes, for some long-tail keywords", "rnk_main": "Yes, for main service / product keywords",
+                "s5_links_label": "Backlink profile (quality of sites linking to you)",
+                "lnk_poor": "Few or spammy links", "lnk_basic": "Some local directories / basic links", "lnk_good": "Authoritative industry sites (high trust)",
+                "s5_gbp_label": "Google Business Profile optimisation",
+                "gbp_none": "Not claimed or empty", "gbp_basic": "Claimed with basic info (address, hours)", "gbp_full": "Fully optimised (posts, Q&A, updates, reviews)",
+                "step6_title": "Conversion & Reputation",
+                "s6_lead_label": "Lead capture mechanism",
+                "ld_none": "None / only a contact form", "ld_news": "Email newsletter signup", "ld_mag": "Lead magnet + automated follow-up sequence",
+                "s6_reviews_label": "Customer reviews & ratings",
+                "rev_low": "No reviews or fewer than 10", "rev_mid": "10-50 reviews, average 4+ stars", "rev_high": "50+ reviews, average 4.5+ stars",
+                "s6_tests_label": "Testimonials / case studies visible",
+                "tst_no": "No", "tst_quotes": "Yes, a few quotes on website/social", "tst_case": "Detailed case studies with measurable results",
+                "s6_contact_label": "Ease of contact (phone, WhatsApp, chat)",
+                "cnt_hard": "Hard to find (buried in footer or missing)", "cnt_vis": "Visible but not click-to-chat", "cnt_easy": "One-click / sticky contact button",
+                "btn_analyze": "Calculate Audit Score",
+                "res_health": "Brand Health Score", "res_health_desc": "Overall performance out of 100 max points.",
+                "res_radar_title": "Segment Analysis", "res_plan_title": "30-Day Strategic Action Plan",
+                "res_cta_title": "Ready to fix these gaps?", "res_cta_desc": "Book a free strategy call to review this audit.", "res_cta_btn": "Book Strategy Call",
+                "load_analyzing": "Analyzing your brand...", "load_desc1": "Calculating scores across 6 key", "load_desc2": "brand segments.",
+                "succ_title": "Your report is ready", "succ_desc": "We've analyzed your brand presence and calculated your scores.", "succ_btn_view": "View Results", "succ_btn_close": "Close",
+                "alert_fill_all": "Please fill out all required fields (*).",
+                "alert_select": "Please answer all questions before proceeding.",
+                "footer_privacy": "Privacy Policy",
+                // Segments
+                "seg_1": "Brand Identity", "seg_2": "Digital Presence", "seg_3": "Website & Tech", "seg_4": "Content Strategy", "seg_5": "SEO & Discovery", "seg_6": "Conversion",
+                // Benchmarks
+                "bm_poor": "Critical gaps detected. Your brand needs immediate strategic attention.",
+                "bm_avg": "Below average. There are many opportunities for growth.",
+                "bm_good": "Good foundation! Focus on optimizing your specific weak segments.",
+                "bm_exc": "Excellent performance. Your brand is in the top tier for your industry."
+            },
+            es: {
+                "page": "Página", "saving": "Guardando...", "res_pdf_btn": "Descargar Reporte PDF",
+                "step0_title1": "Descubre el", "step0_title2": "Verdadero Potencial de tu Marca",
+                "step0_desc": "Realiza nuestro diagnóstico para descubrir brechas estratégicas y obtén un plan de acción.",
+                "step0_btn": "Iniciar Auditoría Gratuita",
+                "opt_select": "Selecciona una opción...", "btn_next": "Siguiente Paso", "btn_back": "Atrás",
+                "step1_title": "Identidad de Marca y Metas",
+                "s1_name_label": "Tu Nombre *", "s1_name_ph": "Juan Pérez",
+                "s1_email_label": "Correo Electrónico *", "s1_email_ph": "juan@empresa.com",
+                "s1_bizname_label": "Nombre del Negocio", "s1_bizname_ph": "Mi Empresa",
+                "s1_biztype_label": "Tipo de Negocio *",
+                "biz_service": "Servicios", "biz_ecom": "E-commerce", "biz_personal": "Personal", "biz_local": "Local",
+                "s1_uvp_label": "¿Cuál es tu propuesta de valor única? (1-2 oraciones)",
+                "s1_aud_label": "Describe tu audiencia ideal (demografía, intereses)",
+                "s1_cons_label": "Consistencia de marca en todas las plataformas *",
+                "cons_inc": "Inconsistente (diferentes logos, colores, tono)",
+                "cons_some": "Algo alineado (elementos visuales similares, tono varía)",
+                "cons_full": "Totalmente consistente (misma identidad y mensaje)",
+                "step2_title": "Presencia Digital",
+                "step2_desc": "Selecciona las plataformas donde tienes un perfil activo.",
+                "plat_web": "Sitio Web", "plat_gb": "Google Mi Negocio", "plat_other": "Pinterest / Otros",
+                "s2_webqual_label": "Calidad del sitio web:",
+                "wq_poor": "Sin web / muy pobre (rota o desactualizada)",
+                "wq_basic": "Básica pero funcional (diseño promedio)",
+                "wq_modern": "Moderna, rápida, móvil, con CTA claros",
+                "step3_title": "UX del Sitio Web y SEO Técnico",
+                "s3_no_web": "Indicaste que no tienes sitio web, saltaremos esta sección técnica.",
+                "s3_mobile_label": "Adaptabilidad móvil (Responsiveness)",
+                "mob_none": "No es adaptable", "mob_partial": "Parcialmente (algunas páginas funcionan)", "mob_full": "Totalmente adaptable en todos los dispositivos",
+                "s3_speed_label": "Velocidad de carga (estimado)",
+                "spd_slow": ">3 segundos (lenta)", "spd_avg": "1-3 segundos (promedio)", "spd_fast": "<1 segundo (rápida)",
+                "s3_seo_label": "Etiquetas meta SEO (título y descripción)",
+                "seo_miss": "Faltantes o por defecto (autogeneradas)", "seo_cust": "Personalizadas en páginas clave",
+                "s3_analytics_label": "Analíticas instaladas (ej. GA4, GTM)",
+                "ana_no": "No", "ana_pass": "Sí, pero no se usan activamente", "ana_act": "Sí, rastreando conversiones/metas",
+                "step4_title": "Estrategia de Contenido",
+                "s4_freq_label": "Frecuencia de publicación (promedio)",
+                "fq_rare": "Nunca / Rara vez", "fq_week": "1-3 veces por semana", "fq_day": "Diariamente", "fq_mult": "Múltiples veces al día",
+                "s4_format_label": "Mix de formatos de contenido",
+                "fmt_text": "Mayormente texto/imágenes", "fmt_mix": "Mix de imágenes + videos ocasionales", "fmt_vid": "Prioridad en Video (Reels, TikTok)",
+                "s4_pillars_label": "¿Tienes pilares de contenido definidos?",
+                "pil_no": "No", "pil_yes": "Sí (2-3 temas principales constantes)",
+                "s4_repurp_label": "¿Tienes un sistema para reciclar contenido?",
+                "rep_no": "No", "rep_some": "A veces (reposteo manual)", "rep_sys": "Sistemático (video → blog → redes → email)",
+                "s4_followers_label": "Total de seguidores (suma de plataformas activas)",
+                "s4_followers_ph": "ej. 5200",
+                "step5_title": "Búsqueda y Descubrimiento (SEO)",
+                "s5_rank_label": "¿Apareces en la primera página de Google para tus palabras clave?",
+                "rnk_no": "No / no estoy seguro", "rnk_long": "Sí, para algunas palabras específicas (long-tail)", "rnk_main": "Sí, para mis servicios/productos principales",
+                "s5_links_label": "Perfil de enlaces (calidad de sitios que te enlazan)",
+                "lnk_poor": "Pocos enlaces o spam", "lnk_basic": "Algunos directorios locales / enlaces básicos", "lnk_good": "Sitios de autoridad en la industria",
+                "s5_gbp_label": "Optimización de Google Mi Negocio",
+                "gbp_none": "No reclamado o vacío", "gbp_basic": "Reclamado con info básica (dirección, horario)", "gbp_full": "Totalmente optimizado (posts, reseñas, Q&A)",
+                "step6_title": "Conversión y Reputación",
+                "s6_lead_label": "Mecanismo de captura de leads",
+                "ld_none": "Ninguno / solo formulario de contacto", "ld_news": "Suscripción a newsletter", "ld_mag": "Lead magnet + secuencia automática de emails",
+                "s6_reviews_label": "Reseñas y calificaciones de clientes",
+                "rev_low": "Sin reseñas o menos de 10", "rev_mid": "10-50 reseñas, promedio 4+ estrellas", "rev_high": "50+ reseñas, promedio 4.5+ estrellas",
+                "s6_tests_label": "Testimonios / casos de éxito visibles",
+                "tst_no": "No", "tst_quotes": "Sí, algunas citas en web/redes", "tst_case": "Casos de éxito detallados con resultados",
+                "s6_contact_label": "Facilidad de contacto (teléfono, WhatsApp)",
+                "cnt_hard": "Difícil de encontrar", "cnt_vis": "Visible pero sin clic para chatear", "cnt_easy": "Botón de contacto a un clic / flotante",
+                "btn_analyze": "Calcular Puntuación",
+                "res_health": "Puntuación de Marca", "res_health_desc": "Rendimiento general sobre 100 puntos máx.",
+                "res_radar_title": "Análisis por Segmentos", "res_plan_title": "Plan de Acción Estratégico (30 Días)",
+                "res_cta_title": "¿Listo para mejorar?", "res_cta_desc": "Reserva una llamada estratégica para revisar tu auditoría.", "res_cta_btn": "Reservar Llamada",
+                "load_analyzing": "Analizando tu marca...", "load_desc1": "Calculando puntuaciones de 6", "load_desc2": "segmentos clave.",
+                "succ_title": "Tu reporte está listo", "succ_desc": "Hemos analizado tu presencia y calculado tus puntuaciones.", "succ_btn_view": "Ver Resultados", "succ_btn_close": "Cerrar",
+                "alert_fill_all": "Por favor, completa todos los campos requeridos (*).",
+                "alert_select": "Por favor, responde a todas las preguntas.",
+                "footer_privacy": "Política de Privacidad",
+                "seg_1": "Identidad", "seg_2": "Presencia", "seg_3": "Web & Tech", "seg_4": "Contenido", "seg_5": "SEO", "seg_6": "Conversión",
+                "bm_poor": "Brechas críticas detectadas. Tu marca necesita atención estratégica inmediata.",
+                "bm_avg": "Por debajo del promedio. Hay muchas oportunidades de crecimiento.",
+                "bm_good": "¡Buena base! Enfócate en optimizar tus segmentos más débiles.",
+                "bm_exc": "Rendimiento excelente. Tu marca está en el nivel superior de tu industria."
+            }
+        };
+
+        // --- LANGUAGE LOGIC ---
+        function applyTranslations() {
+            const lang = state.language;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) el.innerHTML = translations[lang][key];
+            });
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if (translations[lang][key]) el.setAttribute('placeholder', translations[lang][key]);
+            });
+
+            document.getElementById('lang-en').classList.toggle('text-sys-primary', lang === 'en');
+            document.getElementById('lang-en').classList.toggle('text-gray-400', lang !== 'en');
+            document.getElementById('lang-es').classList.toggle('text-sys-primary', lang === 'es');
+            document.getElementById('lang-es').classList.toggle('text-gray-400', lang !== 'es');
+
+            if(state.currentStep === 7) renderResultsContent(); // Re-render translations in results
+        }
+
+        function toggleLanguage() {
+            state.language = state.language === 'en' ? 'es' : 'en';
+            localStorage.setItem('audit_lang', state.language);
+            applyTranslations();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => applyTranslations());
+
+        // --- UI NAVIGATION & VALIDATION ---
+        function updateProgress() {
+            const bar = document.getElementById('progress-bar');
+            const container = document.getElementById('progress-container');
+            const pageIndicator = document.getElementById('step-indicator');
+            const currentPageNum = document.getElementById('current-page');
+            
+            if (state.currentStep === 0 || state.currentStep > state.totalSteps) {
+                container.classList.add('hidden'); pageIndicator.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden'); pageIndicator.classList.remove('hidden');
+                bar.style.width = `${(state.currentStep / state.totalSteps) * 100}%`;
+                currentPageNum.innerText = state.currentStep;
+            }
+        }
+
+        function showStep(stepIndex) {
+            document.querySelectorAll('.step-section').forEach(el => {
+                el.classList.add('hidden'); el.classList.remove('fade-in-up');
+            });
+            
+            const targetId = stepIndex === 7 ? 'results-dashboard' : `step-${stepIndex}`;
+            const target = document.getElementById(targetId);
+            if (target) {
+                target.classList.remove('hidden');
+                void target.offsetWidth; 
+                target.classList.add('fade-in-up');
+            }
+            
+            const bgLayer = document.getElementById('form-bg-layer');
+            if (bgLayer) {
+                if (stepIndex >= 1 && stepIndex <= 6) {
+                    bgLayer.classList.remove('opacity-0'); bgLayer.classList.add('opacity-100');
+                } else {
+                    bgLayer.classList.remove('opacity-100'); bgLayer.classList.add('opacity-0');
+                }
+            }
+            
+            state.currentStep = stepIndex;
+            updateProgress();
+        }
+
+        function toggleWebsiteQuality() {
+            const hasWeb = document.querySelector('input[name="platform"][value="website"]').checked;
+            const wqContainer = document.getElementById('website-quality-container');
+            const step3Qs = document.getElementById('step-3-questions');
+            const noWebMsg = document.getElementById('no-website-msg');
+            
+            if(hasWeb) {
+                wqContainer.classList.remove('hidden');
+                step3Qs.classList.remove('hidden');
+                noWebMsg.classList.add('hidden');
+            } else {
+                wqContainer.classList.add('hidden');
+                document.getElementById('input-website-quality').value = '';
+                step3Qs.classList.add('hidden');
+                noWebMsg.classList.remove('hidden');
+            }
+        }
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800';
+            const icon = type === 'error' ? 
+                `<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` : 
+                `<svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${bgClass} toast-enter pointer-events-auto transition-all`;
+            toast.innerHTML = `${icon}<span class="font-medium text-sm">${message}</span><button onclick="this.parentElement.remove()" class="ml-2 text-gray-400 hover:text-gray-600"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => {
+                if(toast.parentElement) {
+                    toast.classList.replace('toast-enter', 'toast-exit');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        function highlightError(elementId) {
+            const el = document.getElementById(elementId);
+            if(el) {
+                el.classList.add('input-error');
+                setTimeout(() => el.classList.remove('input-error'), 3500);
+            }
+        }
+
+        function simulateLoadingBtn(btn, callback) {
+            if(!btn) { callback(); return; }
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<div class="flex items-center justify-center space-x-2"><div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>${translations[state.language]['saving']}</span></div>`;
+            btn.disabled = true; btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHtml; btn.disabled = false; btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                callback();
+            }, 600); // Faster simulation for UX
+        }
+
+        function validateStep(step) {
+            const lang = state.language; let isValid = true;
+            if (step === 1) {
+                if (!document.getElementById('input-name').value.trim()) { highlightError('input-name'); isValid = false; }
+                if (!document.getElementById('input-email').value.trim()) { highlightError('input-email'); isValid = false; }
+                if (!document.querySelector('input[name="business_type"]:checked')) isValid = false;
+                if (!document.getElementById('input-consistency').value) { highlightError('input-consistency'); isValid = false; }
+                if (!isValid) { showToast(translations[lang]['alert_fill_all']); return false; }
+            }
+            if (step === 2 && document.querySelector('input[name="platform"][value="website"]').checked) {
+                if(!document.getElementById('input-website-quality').value) { highlightError('input-website-quality'); showToast(translations[lang]['alert_select']); return false; }
+            }
+            if (step === 3 && document.querySelector('input[name="platform"][value="website"]').checked) {
+                ['mobile', 'speed', 'seo', 'analytics'].forEach(id => {
+                    if(!document.getElementById(`input-${id}`).value) { highlightError(`input-${id}`); isValid = false; }
+                });
+                if(!isValid) { showToast(translations[lang]['alert_select']); return false; }
+            }
+            if (step === 4) {
+                ['freq', 'format', 'pillars', 'repurp'].forEach(id => {
+                    if(!document.getElementById(`input-${id}`).value) { highlightError(`input-${id}`); isValid = false; }
+                });
+                if (!document.getElementById('input-followers').value.trim()) { highlightError('input-followers'); isValid = false; }
+                if(!isValid) { showToast(translations[lang]['alert_select']); return false; }
+            }
+            if (step === 5) {
+                ['ranking', 'links', 'gbp'].forEach(id => {
+                    if(!document.getElementById(`input-${id}`).value) { highlightError(`input-${id}`); isValid = false; }
+                });
+                if(!isValid) { showToast(translations[lang]['alert_select']); return false; }
+            }
+            if (step === 6) {
+                ['lead', 'reviews', 'tests', 'contact'].forEach(id => {
+                    if(!document.getElementById(`input-${id}`).value) { highlightError(`input-${id}`); isValid = false; }
+                });
+                if(!isValid) { showToast(translations[lang]['alert_select']); return false; }
+            }
+            return true;
+        }
+
+        function saveStepData(step) {
+            const d = state.data;
+            if (step === 1) {
+                d.name = document.getElementById('input-name').value;
+                d.email = document.getElementById('input-email').value;
+                d.bizname = document.getElementById('input-bizname').value;
+                d.business_type = document.querySelector('input[name="business_type"]:checked').value;
+                d.uvp = document.getElementById('input-uvp').value;
+                d.audience = document.getElementById('input-audience-desc').value;
+                d.consistency = document.getElementById('input-consistency').value;
+            }
+            if (step === 2) {
+                d.platforms = Array.from(document.querySelectorAll('input[name="platform"]:checked')).map(cb => cb.value);
+                d.website_quality = d.platforms.includes('website') ? document.getElementById('input-website-quality').value : '';
+            }
+            if (step === 3) {
+                d.mobile = document.getElementById('input-mobile').value;
+                d.speed = document.getElementById('input-speed').value;
+                d.seo = document.getElementById('input-seo').value;
+                d.analytics = document.getElementById('input-analytics').value;
+            }
+            if (step === 4) {
+                d.freq = document.getElementById('input-freq').value;
+                d.format = document.getElementById('input-format').value;
+                d.pillars = document.getElementById('input-pillars').value;
+                d.repurpose = document.getElementById('input-repurp').value;
+                d.followers = parseInt(document.getElementById('input-followers').value) || 0;
+            }
+            if (step === 5) {
+                d.ranking = document.getElementById('input-ranking').value;
+                d.links = document.getElementById('input-links').value;
+                d.gbp = document.getElementById('input-gbp').value;
+            }
+            if (step === 6) {
+                d.lead = document.getElementById('input-lead').value;
+                d.reviews = document.getElementById('input-reviews').value;
+                d.tests = document.getElementById('input-tests').value;
+                d.contact = document.getElementById('input-contact').value;
+            }
+        }
+
+        function nextStep(btn) {
+            if (validateStep(state.currentStep)) {
+                if(state.currentStep > 0 && state.currentStep < 6) {
+                    simulateLoadingBtn(btn, () => {
+                        saveStepData(state.currentStep);
+                        showStep(state.currentStep + 1);
+                    });
+                } else {
+                    saveStepData(state.currentStep);
+                    showStep(state.currentStep + 1);
+                }
+            }
+        }
+
+        function prevStep() {
+            if (state.currentStep > 0) showStep(state.currentStep - 1);
+        }
+
+        // --- SCORING ENGINE (Based on strict text rules) ---
+        function runDiagnostics() {
+            const d = state.data;
+            let s1=0, s2=0, s3=0, s4=0, s5=0, s6=0;
+
+            // Seg 1: Identity (Max 12)
+            if(d.uvp.length > 20) s1 += 4; else if(d.uvp.length >= 5) s1 += 2;
+            if(d.audience.length >= 5) s1 += 3;
+            if(d.consistency === 'fully') s1 += 4; else if(d.consistency === 'somewhat') s1 += 2;
+            s1 = Math.min(s1, 12);
+
+            // Seg 2: Digital Presence (Max 20)
+            s2 += Math.min(d.platforms.length * 2, 10);
+            if(d.website_quality === 'modern') s2 += 10; else if(d.website_quality === 'basic') s2 += 5;
+            s2 = Math.min(s2, 20);
+
+            // Seg 3: Web & Tech (Max 18)
+            if(d.platforms.includes('website')) {
+                if(d.mobile === 'full') s3 += 6; else if(d.mobile === 'partial') s3 += 3;
+                if(d.speed === 'fast') s3 += 6; else if(d.speed === 'avg') s3 += 3;
+                if(d.seo === 'custom') s3 += 2;
+                if(d.analytics === 'yes_active') s3 += 2; else if(d.analytics === 'yes_passive') s3 += 1;
+            }
+            s3 = Math.min(s3, 18);
+
+            // Seg 4: Content (Max 20)
+            if(d.freq === 'multiple') s4 += 6; else if(d.freq === 'daily') s4 += 4; else if(d.freq === 'weekly') s4 += 2;
+            if(d.format === 'video') s4 += 4; else if(d.format === 'mix') s4 += 2;
+            if(d.pillars === 'yes') s4 += 3;
+            if(d.repurpose === 'systematic') s4 += 4; else if(d.repurpose === 'sometimes') s4 += 2;
+            if(d.followers > 10000) s4 += 3; else if(d.followers > 2000) s4 += 2; else if(d.followers >= 500) s4 += 1;
+            s4 = Math.min(s4, 20);
+
+            // Seg 5: SEO (Max 15)
+            if(d.ranking === 'main') s5 += 6; else if(d.ranking === 'longtail') s5 += 3;
+            if(d.links === 'good') s5 += 4; else if(d.links === 'basic') s5 += 2;
+            if(d.gbp === 'full') s5 += 4; else if(d.gbp === 'basic') s5 += 2;
+            s5 = Math.min(s5, 15);
+
+            // Seg 6: Conversion (Max 15)
+            if(d.lead === 'magnet') s6 += 4; else if(d.lead === 'newsletter') s6 += 2;
+            if(d.reviews === 'high') s6 += 4; else if(d.reviews === 'mid') s6 += 2;
+            if(d.tests === 'case') s6 += 4; else if(d.tests === 'quotes') s6 += 2;
+            if(d.contact === 'easy') s6 += 4; else if(d.contact === 'visible') s6 += 2;
+            s6 = Math.min(s6, 15);
+
+            const total = s1 + s2 + s3 + s4 + s5 + s6;
+            
+            state.results.totalScore = total;
+            state.results.segments = [
+                { id: 'seg_1', raw: s1, max: 12, pct: Math.round((s1/12)*100) },
+                { id: 'seg_2', raw: s2, max: 20, pct: Math.round((s2/20)*100) },
+                { id: 'seg_3', raw: s3, max: 18, pct: d.platforms.includes('website') ? Math.round((s3/18)*100) : 0 },
+                { id: 'seg_4', raw: s4, max: 20, pct: Math.round((s4/20)*100) },
+                { id: 'seg_5', raw: s5, max: 15, pct: Math.round((s5/15)*100) },
+                { id: 'seg_6', raw: s6, max: 15, pct: Math.round((s6/15)*100) }
+            ];
+
+            generateRecommendations(s3, s4, s6, total);
+        }
+
+        function generateRecommendations(s3, s4, s6, total) {
+            const recs = [];
+            const d = state.data;
+            const lang = state.language;
+
+            // Conditional Logic for Recs
+            if ((s4/20) < 0.5 && d.followers < 1000) {
+                recs.push({
+                    en: { title: "Scale Content Output", desc: "Post daily Reels + collaborate with 2 micro-influencers in your niche to build initial traction." },
+                    es: { title: "Escala tu Contenido", desc: "Publica Reels diarios y colabora con 2 micro-influencers para generar tracción inicial." }
+                });
+            }
+            if (d.platforms.includes('website') && (s3/18) < 0.4) {
+                recs.push({
+                    en: { title: "Fix Technical Foundations", desc: "Improve mobile responsiveness and ensure Google Analytics is correctly tracking user behaviour." },
+                    es: { title: "Mejora Técnica", desc: "Mejora la adaptabilidad móvil y asegúrate de que Google Analytics esté rastreando el comportamiento." }
+                });
+            }
+            if ((s6/15) < 0.4) {
+                recs.push({
+                    en: { title: "Build an Email Funnel", desc: "Create a lead magnet (e.g., free checklist) and set up an automated email follow-up sequence." },
+                    es: { title: "Crea un Embudo (Funnel)", desc: "Crea un lead magnet (ej. guía gratuita) y configura una secuencia automática de correos." }
+                });
+            }
+            if (!d.platforms.includes('google_business') && (d.business_type === 'service' || d.business_type === 'local')) {
+                 recs.push({
+                    en: { title: "Claim Local Real Estate", desc: "Set up and fully optimize your Google Business Profile to capture high-intent local searches." },
+                    es: { title: "Domina el SEO Local", desc: "Configura y optimiza tu Perfil de Google Mi Negocio para captar búsquedas locales." }
+                });
+            }
+            if (total >= 80) {
+                recs.push({
+                    en: { title: "Scale Authority", desc: "Focus on authority building: guest posting, speaking engagements, or strategic industry partnerships." },
+                    es: { title: "Escala tu Autoridad", desc: "Enfócate en construir autoridad: alianzas estratégicas, PR y colaboraciones de alto nivel." }
+                });
+            }
+            
+            // Generic Fallbacks if rules didn't trigger enough
+            if(recs.length < 2) {
+                recs.push({
+                    en: { title: "Standardize Branding", desc: "Ensure your visual identity and core messaging are identical across all touchpoints." },
+                    es: { title: "Estandariza tu Marca", desc: "Asegura que tu identidad visual y mensaje sean idénticos en todos lados." }
+                });
+            }
+
+            state.results.recommendations = recs.map(r => ({ title: r[lang].title, desc: r[lang].desc }));
+        }
+
+        function processResults(btn) {
+            saveStepData(6);
+            runDiagnostics();
+            document.getElementById('loading-overlay').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('success-modal-overlay').classList.remove('hidden');
+                fireConfetti();
+                submitAuditToBackend(); 
+            }, 3000); 
+        }
+
+        // --- RESULTS RENDERER ---
+        let radarChart = null;
+
+        function showResults() {
+            document.getElementById('success-modal-overlay').classList.add('hidden');
+            showStep(7); 
+            renderResultsContent();
+            animateValue("final-score-text", 0, state.results.totalScore, 1500);
+            renderChart();
+        }
+
+        function renderResultsContent() {
+            const lang = state.language;
+            const t = translations[lang];
+            const score = state.results.totalScore;
+            
+            // Benchmark text
+            let bmText = t['bm_poor'];
+            if(score >= 80) bmText = t['bm_exc'];
+            else if(score >= 60) bmText = t['bm_good'];
+            else if(score >= 40) bmText = t['bm_avg'];
+            document.getElementById('benchmark-line').innerText = bmText;
+
+            // Segments Breakdown
+            const segContainer = document.getElementById('segment-breakdown');
+            segContainer.innerHTML = '';
+            state.results.segments.forEach(seg => {
+                let colorClass = seg.pct >= 80 ? 'bg-green-400' : seg.pct >= 50 ? 'bg-yellow-400' : 'bg-red-400';
+                segContainer.innerHTML += `
+                    <div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-sm font-bold text-sys-title">${t[seg.id]}</span>
+                            <span class="text-xs font-medium text-sys-text">${seg.raw}/${seg.max} (${seg.pct}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2">
+                            <div class="${colorClass} h-2 rounded-full transition-all duration-1000" style="width: ${seg.pct}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Recommendations
+            const recContainer = document.getElementById('recommendations-container');
+            recContainer.innerHTML = '';
+            state.results.recommendations.forEach(rec => {
+                recContainer.innerHTML += `
+                    <div class="bg-sys-bg/50 border border-sys-primary/10 rounded-xl p-4 flex items-start gap-3">
+                        <svg class="w-5 h-5 text-sys-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <div>
+                            <h4 class="font-bold text-sys-title text-sm">${rec.title}</h4>
+                            <p class="text-sm text-sys-text mt-1">${rec.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const pcts = state.results.segments.map(s => s.pct);
+            const labels = state.results.segments.map(s => translations[state.language][s.id]);
+            
+            if (radarChart) radarChart.destroy();
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntuación de Marca',
+                        data: pcts,
+                        backgroundColor: 'rgba(139, 132, 245, 0.2)',
+                        borderColor: '#8b84f5',
+                        pointBackgroundColor: '#e07dd1',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#e07dd1',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        r: { 
+                            angleLines: { color: 'rgba(0, 0, 0, 0.05)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                            pointLabels: { font: { size: 10, family: 'Inter' }, color: '#707070' },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id); let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (2 - progress) * (end - start) + start);
+                if (progress < 1) window.requestAnimationFrame(step); else obj.innerHTML = end; 
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function fireConfetti() {
+            const duration = 4000; 
+            const end = Date.now() + duration;
+            const brandColors = ['#8b84f5', '#e07dd1', '#4b4998'];
+
+            // Initial massive pop!
+            confetti({
+                particleCount: 150,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: brandColors,
+                zIndex: 9999
+            });
+
+            // Continuous heavy side cannons
+            (function frame() {
+                confetti({ 
+                    particleCount: 12, 
+                    angle: 60, 
+                    spread: 80, 
+                    origin: { x: 0, y: 0.7 }, 
+                    colors: brandColors, 
+                    zIndex: 9999 
+                });
+                confetti({ 
+                    particleCount: 12, 
+                    angle: 120, 
+                    spread: 80, 
+                    origin: { x: 1, y: 0.7 }, 
+                    colors: brandColors, 
+                    zIndex: 9999 
+                });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        // --- EXTERNAL INTEGRATION ---
+        async function submitAuditToBackend() {
+            const pcts = state.results.segments.map(s => s.pct);
+            const chartConfig = { type: 'radar', data: { labels: ['Id','Pres','Web','Cont','SEO','Conv'], datasets: [{ data: pcts, backgroundColor: 'rgba(139,132,245,0.4)', borderColor: '#8b84f5' }] } };
+            const chartUrl = `https://quickchart.io/chart?w=300&h=300&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+            
+            const payload = {
+                name: state.data.name, email: state.data.email, business_type: state.data.business_type,
+                total_score: state.results.totalScore,
+                recommendations: state.results.recommendations,
+                chart_url: chartUrl,
+                raw_answers: state.data
+            };
+            console.log("Dispatching to Webhook:", payload);
+            try {
+                fetch("https://script.google.com/macros/s/AKfycbxYY0v1jXkg-lc64c4mEPdC707Qkvtz1k1L2MWnzbRyPmoc-H01MndB9H1gMnC9CuPuRA/exec", {
+                    method: 'POST', mode: 'no-cors', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) { console.error(error); }
+        }
+    </script>
+</body>
+</html>
