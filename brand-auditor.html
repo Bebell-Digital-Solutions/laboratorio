@@ -1,1 +1,1279 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brand Presence Diagnostic</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Tailwind CSS Setup -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        sys: {
+                            bg: '#f2f1fb',
+                            primary: '#8b84f5',
+                            secondary: '#e07dd1',
+                            title: '#4b4998',
+                            text: '#707070',
+                            card: '#ffffff'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(139, 132, 245, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #f2f1fb;
+            color: #707070;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .gradient-text {
+            background-image: linear-gradient(90deg, #8b84f5, #e07dd1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(15px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .scale-in {
+            animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        @keyframes scaleIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Custom Radio/Checkbox styling */
+        .custom-radio:checked + div {
+            border-color: #8b84f5;
+            background-color: #f2f1fb;
+        }
+        .custom-radio:checked + div .radio-dot {
+            background-color: #8b84f5;
+            transform: scale(1);
+        }
+        
+        /* Spinner */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(139, 132, 245, 0.2);
+            border-left-color: #8b84f5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .btn-interactive {
+            transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-interactive:hover:not(:disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 4px 15px rgba(139, 132, 245, 0.3);
+        }
+        .btn-interactive:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        /* PDF Print Styles for Clean Reporting */
+        @media print {
+            body { background-color: #ffffff !important; margin: 0; padding: 0; }
+            main { box-shadow: none !important; max-width: 100% !important; border: none !important; }
+            .btn-interactive, button, #step-indicator, .absolute.top-4 { display: none !important; }
+            #recommendations-container { max-height: none !important; overflow: visible !important; }
+            .bg-sys-bg { background-color: #f9f9f9 !important; border: 1px solid #eee !important; }
+            #form-bg-layer { display: none !important; }
+        }
+
+        /* Toast Animations */
+        .toast-enter {
+            animation: toastEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .toast-exit {
+            animation: toastExit 0.3s ease-in forwards;
+        }
+        @keyframes toastEnter {
+            from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes toastExit {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to { opacity: 0; transform: translateY(-20px) scale(0.95); }
+        }
+        
+        /* Error highlight class */
+        .input-error {
+            border-color: #ef4444 !important; /* Tailwind red-500 */
+            box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-5 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none"></div>
+
+    <!-- Main App Container -->
+    <main class="w-full max-w-[980px] bg-sys-card rounded-2xl shadow-soft relative overflow-hidden flex flex-col min-h-[600px]">
+        
+        <!-- Dynamic Background Layer (Pages 1 to 4) -->
+        <div id="form-bg-layer" class="absolute inset-0 z-0 bg-cover bg-center transition-opacity duration-700 opacity-0 pointer-events-none" style="background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/3729823166a669c2a97898d8aa090735a2e8b704.jpeg');">
+            <!-- Light overlay for text readability -->
+            <div class="absolute inset-0 bg-white/60 backdrop-blur-[1px]"></div>
+        </div>
+
+        <!-- Language Toggle -->
+        <div class="absolute top-4 right-4 z-50">
+            <button onclick="toggleLanguage()" class="flex items-center gap-2 bg-sys-bg text-sys-title px-3 py-1.5 rounded-full text-sm font-semibold shadow-sm hover:bg-gray-100 transition-colors">
+                <span id="lang-en" class="text-sys-primary">EN</span>
+                <span class="text-gray-300">|</span>
+                <span id="lang-es" class="text-gray-400">ES</span>
+            </button>
+        </div>
+
+        <!-- Page Indicator -->
+        <div id="step-indicator" class="absolute top-5 left-6 z-40 text-sm font-bold text-sys-primary hidden bg-sys-primary/10 px-3 py-1 rounded-full">
+            <span data-i18n="page">Page</span> <span id="current-page">1</span>/4
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-container" class="w-full h-2 bg-gray-100 hidden mt-[60px] sm:mt-0 relative z-10">
+            <div id="progress-bar" class="h-full bg-gradient-to-r from-sys-primary to-sys-secondary transition-all duration-500 ease-out w-0"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="flex-1 p-6 sm:p-12 flex flex-col justify-center relative z-10">
+
+            <!-- STEP 0: Landing -->
+            <section id="step-0" class="step-section text-center max-w-[780px] mx-auto fade-in-up">
+                <div class="mb-8 flex justify-center">
+                    <img src="https://bucket.mlcdn.com/a/3336/3336910/images/3299633b8e4ab14112a8f3b2a7c004fa6fb021d1.png" alt="Brand Logo" class="h-28 object-contain">
+                </div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-sys-title mb-4 max-w-[780px] mx-auto leading-tight">
+                    <span data-i18n="step0_title1">Discover Your Brand's</span><br>
+                    <span class="gradient-text" data-i18n="step0_title2">True Potential</span>
+                </h1>
+                <p class="text-lg text-sys-text mb-8" data-i18n="step0_desc">Take our 2-minute diagnostic to uncover strategic gaps in your digital presence and get a custom action plan.</p>
+                <button onclick="nextStep(this)" class="btn-interactive bg-sys-primary text-white font-semibold py-3 px-8 rounded-xl text-lg min-w-[220px]" data-i18n="step0_btn">
+                    Start Free Audit
+                </button>
+            </section>
+
+            <!-- STEP 1: Basic Info -->
+            <section id="step-1" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step1_title">Let's start with the basics</h2>
+                <div class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="step1_name_label">Your Name</label>
+                        <input type="text" id="input-name" data-i18n-ph="step1_name_ph" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 hover:bg-white hover:shadow-sm focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 focus:bg-white outline-none transition-all bg-white/80 backdrop-blur-sm" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-1" data-i18n="step1_email_label">Email Address</label>
+                        <input type="email" id="input-email" data-i18n-ph="step1_email_ph" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 hover:bg-white hover:shadow-sm focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 focus:bg-white outline-none transition-all bg-white/80 backdrop-blur-sm" placeholder="john@company.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-3" data-i18n="step1_biz_label">What type of business are you?</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="service" class="custom-radio sr-only">
+                                <div class="px-4 py-3 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 backdrop-blur-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 mr-3 flex items-center justify-center"><div class="radio-dot w-2 h-2 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_service">Service Business</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="ecommerce" class="custom-radio sr-only">
+                                <div class="px-4 py-3 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 backdrop-blur-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 mr-3 flex items-center justify-center"><div class="radio-dot w-2 h-2 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_ecom">E-commerce</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="personal_brand" class="custom-radio sr-only">
+                                <div class="px-4 py-3 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 backdrop-blur-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 mr-3 flex items-center justify-center"><div class="radio-dot w-2 h-2 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_personal">Personal Brand</span>
+                                </div>
+                            </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="business_type" value="local" class="custom-radio sr-only">
+                                <div class="px-4 py-3 border border-gray-200 rounded-lg flex items-center transition-all hover:bg-white bg-white/80 backdrop-blur-sm">
+                                    <div class="w-4 h-4 rounded-full border border-gray-300 mr-3 flex items-center justify-center"><div class="radio-dot w-2 h-2 rounded-full bg-transparent transform scale-0 transition-transform"></div></div>
+                                    <span class="font-medium text-sys-title" data-i18n="biz_local">Local Business</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Back</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Next Step</button>
+                </div>
+            </section>
+
+            <!-- STEP 2: Platform Presence -->
+            <section id="step-2" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-2" data-i18n="step2_title">Where are you active?</h2>
+                <p class="text-sys-text mb-6 text-sm" data-i18n="step2_desc">Select the platforms where you have an active profile.</p>
+                
+                <div class="grid grid-cols-2 gap-3" id="platforms-grid">
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="website" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title" data-i18n="plat_web">Website</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="google_business" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title" data-i18n="plat_gb">Google Business</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="instagram" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title">Instagram</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="tiktok" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title">TikTok</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="linkedin" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title">LinkedIn</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="facebook" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title">Facebook</span>
+                    </label>
+                    <label class="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                        <input type="checkbox" name="platform" value="youtube" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                        <span class="font-medium text-sys-title">YouTube</span>
+                    </label>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Back</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Next Step</button>
+                </div>
+            </section>
+
+            <!-- STEP 3: Activity & Audience -->
+            <section id="step-3" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-6" data-i18n="step3_title">Activity & Reach</h2>
+                
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-3" data-i18n="step3_post_label">On average, how often do you post new content?</label>
+                        <select id="input-posting" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 hover:bg-white hover:shadow-sm focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 focus:bg-white outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="freq_default">Select frequency...</option>
+                            <option value="daily" data-i18n="freq_daily">Daily</option>
+                            <option value="weekly" data-i18n="freq_weekly">1-3 times a week</option>
+                            <option value="monthly" data-i18n="freq_monthly">A few times a month</option>
+                            <option value="rarely" data-i18n="freq_rarely">Rarely / Inconsistent</option>
+                            <option value="never" data-i18n="freq_never">Never</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-sys-title mb-3" data-i18n="step3_aud_label">Estimated total audience size (followers/subscribers across platforms)</label>
+                        <select id="input-audience" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 hover:bg-white hover:shadow-sm focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 focus:bg-white outline-none bg-white/80 backdrop-blur-sm transition-all cursor-pointer">
+                            <option value="" disabled selected data-i18n="aud_default">Select size...</option>
+                            <option value="500" data-i18n="aud_500">Less than 1,000</option>
+                            <option value="5000" data-i18n="aud_5k">1,000 - 10,000</option>
+                            <option value="25000" data-i18n="aud_25k">10,000 - 50,000</option>
+                            <option value="100000" data-i18n="aud_100k">50,000+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Back</button>
+                    <button onclick="nextStep(this)" class="btn-interactive bg-sys-title text-white font-semibold py-2 px-6 rounded-lg min-w-[140px]" data-i18n="btn_next">Next Step</button>
+                </div>
+            </section>
+
+            <!-- STEP 4: Infrastructure (Dynamic based on Business Type) -->
+            <section id="step-4" class="step-section hidden max-w-xl mx-auto w-full pt-8 sm:pt-6">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png" alt="Brand Logo" class="h-8 sm:h-10 mb-6 object-contain">
+                <h2 class="text-2xl font-bold text-sys-title mb-2" data-i18n="step4_title">Systems & Infrastructure</h2>
+                <p class="text-sys-text mb-6 text-sm" data-i18n="step4_desc">Tell us about how you convert attention into action.</p>
+                
+                <div id="dynamic-questions" class="space-y-4">
+                    <!-- Populated via JS based on Business Type -->
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button onclick="prevStep()" class="text-sys-secondary hover:opacity-80 transition-opacity font-medium py-2 px-4" data-i18n="btn_back">Back</button>
+                    <button onclick="processResults(this)" class="btn-interactive bg-sys-primary text-white font-semibold py-2 px-6 rounded-lg shadow-lg min-w-[180px]" data-i18n="btn_analyze">Analyze My Brand</button>
+                </div>
+            </section>
+
+            <!-- RESULTS DASHBOARD -->
+            <section id="results-dashboard" class="step-section hidden w-full fade-in-up">
+                
+                <div class="flex flex-col md:flex-row gap-8 items-start">
+                    
+                    <!-- Left Column: Scores -->
+                    <div class="w-full md:w-1/3 flex flex-col items-center">
+                        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full text-center relative">
+                            <h3 class="text-lg font-bold text-sys-title mb-1" data-i18n="res_health">Brand Health Score</h3>
+                            <p class="text-sm text-sys-text mb-6" data-i18n="res_health_desc">Based on your business type logic.</p>
+                            
+                            <div class="relative w-48 h-48 mx-auto">
+                                <canvas id="scoreChart"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col">
+                                    <span id="final-score-text" class="text-5xl font-black text-sys-title">0</span>
+                                    <span class="text-sm text-sys-text font-medium mt-1">/ 100</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mini CTA -->
+                        <div class="mt-6 w-full bg-sys-bg rounded-xl p-5 border border-sys-primary/20 text-center">
+                            <h4 class="font-bold text-sys-title mb-2" data-i18n="res_cta_title">Ready to fix these gaps?</h4>
+                            <p class="text-sm text-sys-text mb-4" data-i18n="res_cta_desc">Book a free strategy call to review this audit.</p>
+                            <button class="btn-interactive w-full bg-sys-title text-white font-semibold py-2 rounded-lg text-sm" data-i18n="res_cta_btn">Book Strategy Call</button>
+                            
+                            <!-- PDF Download Button -->
+                            <button onclick="window.print()" class="btn-interactive w-full bg-white text-sys-title font-semibold py-2 rounded-lg text-sm border border-gray-200 mt-3 shadow-sm hover:bg-gray-50 flex justify-center items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                <span data-i18n="res_pdf_btn">Download PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Diagnostics & Recommendations -->
+                    <div class="w-full md:w-2/3">
+                        <h3 class="text-2xl font-bold text-sys-title mb-4 border-b pb-2" data-i18n="res_plan_title">Strategic Action Plan</h3>
+                        
+                        <div id="recommendations-container" class="space-y-4 overflow-y-auto pr-2" style="max-height: 500px;">
+                            <!-- Recs injected here -->
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </div>
+
+        <!-- OVERLAYS -->
+
+        <!-- Loading Overlay (Final Process) -->
+        <div id="loading-overlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm z-40 flex flex-col items-center justify-center fade-in">
+            <div class="spinner mb-6"></div>
+            <h3 class="text-xl font-bold text-sys-title" data-i18n="load_analyzing">Analyzing your brand...</h3>
+            <p class="text-sys-text mt-2 text-sm text-center max-w-xs"><span data-i18n="load_desc1">Cross-referencing platforms against</span> <span id="loading-biz-type" class="font-semibold">industry</span> <span data-i18n="load_desc2">standards.</span></p>
+        </div>
+
+        <!-- Success Modal Overlay -->
+        <div id="success-modal-overlay" class="hidden absolute inset-0 bg-sys-title/40 backdrop-blur-sm z-50 flex items-center justify-center fade-in">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-[400px] w-[90%] p-8 text-center scale-in">
+                <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                    <svg class="h-8 w-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-sys-title mb-2" data-i18n="succ_title">Your report is ready</h3>
+                <p class="text-sys-text mb-8" data-i18n="succ_desc">We've analyzed your brand presence and identified key growth opportunities.</p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="showResults()" class="btn-interactive w-full bg-sys-primary text-white font-semibold py-3 px-4 rounded-xl" data-i18n="succ_btn_view">View Results</button>
+                    <button onclick="closeModalOnly()" class="text-sys-text hover:text-sys-title font-medium py-2" data-i18n="succ_btn_close">Close</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-8 text-center text-sm text-sys-text z-10 relative">
+        <div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4">
+            <a href="#" class="hover:text-sys-title transition-colors underline" data-i18n="footer_privacy">Privacy Policy</a>
+            <span class="hidden md:inline text-gray-300">|</span>
+            <span>Powered with ⚡️ by <a href="https://bebelldigitalsolutions.com" target="_blank" class="font-bold hover:text-sys-primary transition-colors">Bebell Digital Solutions</a></span>
+        </div>
+    </footer>
+
+    <script>
+        // --- 1. CORE DATA & STATE ---
+        const state = {
+            language: localStorage.getItem('audit_lang') || 'en',
+            currentStep: 0,
+            totalSteps: 4,
+            data: {
+                name: '',
+                email: '',
+                business_type: '',
+                platforms: [],
+                posting_frequency: '',
+                followers_total: 0,
+                // dynamic infra
+                reviews: false,
+                reviews_count: 0,
+                rating: 0,
+                lead_capture: false,
+                contact_button: false,
+                product_videos: false,
+                conversion_optimized: false,
+                personal_branding_consistent: false,
+                authority_content: false
+            },
+            results: {
+                score: 100,
+                flags: [],
+                recommendations: []
+            }
+        };
+
+        // --- 1.5 TRANSLATIONS DB ---
+        const translations = {
+            en: {
+                "page": "Page",
+                "saving": "Saving...",
+                "res_pdf_btn": "Download PDF",
+                "step0_title1": "Discover Your Brand's",
+                "step0_title2": "True Potential",
+                "step0_desc": "Take our 2-minute diagnostic to uncover strategic gaps in your digital presence and get a custom action plan.",
+                "step0_btn": "Start Free Audit",
+                "step1_title": "Let's start with the basics",
+                "step1_name_label": "Your Name",
+                "step1_name_ph": "John Doe",
+                "step1_email_label": "Email Address",
+                "step1_email_ph": "john@company.com",
+                "step1_biz_label": "What type of business are you?",
+                "biz_service": "Service Business",
+                "biz_ecom": "E-commerce",
+                "biz_personal": "Personal Brand",
+                "biz_local": "Local Business",
+                "btn_next": "Next Step",
+                "btn_back": "Back",
+                "step2_title": "Where are you active?",
+                "step2_desc": "Select the platforms where you have an active profile.",
+                "plat_web": "Website",
+                "plat_gb": "Google Business",
+                "step3_title": "Activity & Reach",
+                "step3_post_label": "On average, how often do you post new content?",
+                "freq_default": "Select frequency...",
+                "freq_daily": "Daily",
+                "freq_weekly": "1-3 times a week",
+                "freq_monthly": "A few times a month",
+                "freq_rarely": "Rarely / Inconsistent",
+                "freq_never": "Never",
+                "step3_aud_label": "Estimated total audience size (followers/subscribers across platforms)",
+                "aud_default": "Select size...",
+                "aud_500": "Less than 1,000",
+                "aud_5k": "1,000 - 10,000",
+                "aud_25k": "10,000 - 50,000",
+                "aud_100k": "50,000+",
+                "step4_title": "Systems & Infrastructure",
+                "step4_desc": "Tell us about how you convert attention into action.",
+                "btn_analyze": "Analyze My Brand",
+                "res_health": "Brand Health Score",
+                "res_health_desc": "Based on your business type logic.",
+                "res_cta_title": "Ready to fix these gaps?",
+                "res_cta_desc": "Book a free strategy call to review this audit.",
+                "res_cta_btn": "Book Strategy Call",
+                "res_plan_title": "Strategic Action Plan",
+                "load_analyzing": "Analyzing your brand...",
+                "load_desc1": "Cross-referencing platforms against",
+                "load_desc2": "industry standards.",
+                "succ_title": "Your report is ready",
+                "succ_desc": "We've analyzed your brand presence and identified key growth opportunities.",
+                "succ_btn_view": "View Results",
+                "succ_btn_close": "Close",
+                "dyn_service_rev": "We actively collect customer reviews",
+                "dyn_service_lead": "We have a form/system to capture leads on our site",
+                "dyn_ecom_vid": "We regularly post product demonstration videos",
+                "dyn_ecom_conv": "Our store is optimized (fast checkout, trust badges, clear CTA)",
+                "dyn_pb_auth": "I regularly publish educational or authority-building content",
+                "dyn_pb_cons": "My visual branding and message is consistent everywhere",
+                "dyn_local_rev": "We have a system to get Google reviews",
+                "dyn_local_rev_count": "Estimated number of Google Reviews",
+                "dyn_local_rev_ph": "e.g. 50",
+                "dyn_local_rating": "Current Average Rating (1-5)",
+                "dyn_local_contact": "It is very easy to find our phone number or WhatsApp",
+                "alert_fill_all": "Please fill out all fields to continue.",
+                "alert_select_act": "Please select your activity and audience size.",
+                "rec_excel_title": "Excellent Work!",
+                "rec_excel_desc": "Your brand fundamentals are solid based on our diagnostic.",
+                "footer_privacy": "Privacy Policy"
+            },
+            es: {
+                "page": "Página",
+                "saving": "Guardando...",
+                "res_pdf_btn": "Descargar PDF",
+                "step0_title1": "Descubre el",
+                "step0_title2": "Verdadero Potencial de tu Marca",
+                "step0_desc": "Realiza nuestro diagnóstico de 2 minutos para descubrir brechas estratégicas y obtén un plan de acción personalizado.",
+                "step0_btn": "Iniciar Auditoría Gratuita",
+                "step1_title": "Empecemos con lo básico",
+                "step1_name_label": "Tu Nombre",
+                "step1_name_ph": "Juan Pérez",
+                "step1_email_label": "Correo Electrónico",
+                "step1_email_ph": "juan@empresa.com",
+                "step1_biz_label": "¿Qué tipo de negocio tienes?",
+                "biz_service": "Negocio de Servicios",
+                "biz_ecom": "E-commerce",
+                "biz_personal": "Marca Personal",
+                "biz_local": "Negocio Local",
+                "btn_next": "Siguiente Paso",
+                "btn_back": "Atrás",
+                "step2_title": "¿Dónde estás activo?",
+                "step2_desc": "Selecciona las plataformas donde tienes un perfil activo.",
+                "plat_web": "Sitio Web",
+                "plat_gb": "Google Mi Negocio",
+                "step3_title": "Actividad y Alcance",
+                "step3_post_label": "En promedio, ¿con qué frecuencia publicas contenido nuevo?",
+                "freq_default": "Selecciona frecuencia...",
+                "freq_daily": "Diariamente",
+                "freq_weekly": "1-3 veces a la semana",
+                "freq_monthly": "Algunas veces al mes",
+                "freq_rarely": "Casi nunca / Inconsistente",
+                "freq_never": "Nunca",
+                "step3_aud_label": "Tamaño total estimado de la audiencia (seguidores en plataformas)",
+                "aud_default": "Selecciona tamaño...",
+                "aud_500": "Menos de 1,000",
+                "aud_5k": "1,000 - 10,000",
+                "aud_25k": "10,000 - 50,000",
+                "aud_100k": "50,000+",
+                "step4_title": "Sistemas e Infraestructura",
+                "step4_desc": "Cuéntanos cómo conviertes la atención en acción.",
+                "btn_analyze": "Analizar Mi Marca",
+                "res_health": "Puntuación de Salud de Marca",
+                "res_health_desc": "Basado en la lógica de tu tipo de negocio.",
+                "res_cta_title": "¿Listo para cerrar estas brechas?",
+                "res_cta_desc": "Reserva una llamada estratégica gratuita para revisar esta auditoría.",
+                "res_cta_btn": "Reservar Llamada",
+                "res_plan_title": "Plan de Acción Estratégico",
+                "load_analyzing": "Analizando tu marca...",
+                "load_desc1": "Comparando plataformas con los estándares de",
+                "load_desc2": "tu industria.",
+                "succ_title": "Tu reporte está listo",
+                "succ_desc": "Hemos analizado la presencia de tu marca e identificado oportunidades clave de crecimiento.",
+                "succ_btn_view": "Ver Resultados",
+                "succ_btn_close": "Cerrar",
+                "dyn_service_rev": "Recopilamos activamente reseñas de clientes",
+                "dyn_service_lead": "Tenemos un sistema para captar leads en nuestro sitio",
+                "dyn_ecom_vid": "Publicamos regularmente videos demostrativos de productos",
+                "dyn_ecom_conv": "Nuestra tienda está optimizada (pago rápido, sellos, CTA claro)",
+                "dyn_pb_auth": "Publico regularmente contenido educativo para construir autoridad",
+                "dyn_pb_cons": "Mi branding visual y mensaje son consistentes en todas partes",
+                "dyn_local_rev": "Tenemos un sistema para obtener reseñas en Google",
+                "dyn_local_rev_count": "Número estimado de Reseñas en Google",
+                "dyn_local_rev_ph": "ej. 50",
+                "dyn_local_rating": "Calificación Promedio Actual (1-5)",
+                "dyn_local_contact": "Es muy fácil encontrar nuestro número de teléfono o WhatsApp",
+                "alert_fill_all": "Por favor, completa todos los campos para continuar.",
+                "alert_select_act": "Por favor, selecciona tu actividad y tamaño de audiencia.",
+                "rec_excel_title": "¡Excelente Trabajo!",
+                "rec_excel_desc": "Los fundamentos de tu marca son sólidos según nuestro diagnóstico.",
+                "footer_privacy": "Política de Privacidad"
+            }
+        };
+
+        // --- 2. BUSINESS RULES ENGINE ---
+        const businessRules = {
+            service: {
+                required: ['google_business', 'website'],
+                rules: [
+                    { condition: (d) => !d.platforms.includes('google_business'), flag: 'MISSING_GOOGLE_PROFILE', severity: 'critical', penalty: 10 },
+                    { condition: (d) => !d.platforms.includes('website'), flag: 'NO_WEBSITE', severity: 'critical', penalty: 15 },
+                    { condition: (d) => !d.platforms.includes('linkedin'), flag: 'MISSING_LINKEDIN', severity: 'high', penalty: 8 },
+                    { condition: (d) => ['monthly', 'rarely', 'never'].includes(d.posting_frequency), flag: 'LOW_CONTENT_ACTIVITY', severity: 'high', penalty: 10 },
+                    { condition: (d) => !d.reviews, flag: 'NO_SOCIAL_PROOF', severity: 'high', penalty: 10 },
+                    { condition: (d) => !d.lead_capture, flag: 'NO_LEAD_CAPTURE', severity: 'critical', penalty: 15 }
+                ]
+            },
+            ecommerce: {
+                required: ['website', 'instagram', 'tiktok'],
+                rules: [
+                    { condition: (d) => !d.platforms.includes('website'), flag: 'NO_ECOMMERCE_STORE', severity: 'critical', penalty: 20 },
+                    { condition: (d) => !d.platforms.includes('instagram'), flag: 'MISSING_INSTAGRAM', severity: 'critical', penalty: 12 },
+                    { condition: (d) => !d.platforms.includes('tiktok'), flag: 'MISSING_TIKTOK', severity: 'critical', penalty: 12 },
+                    { condition: (d) => ['weekly', 'monthly', 'rarely', 'never'].includes(d.posting_frequency), flag: 'LOW_CONTENT_VOLUME', severity: 'high', penalty: 10 },
+                    { condition: (d) => d.followers_total < 1000, flag: 'LOW_AUDIENCE', severity: 'medium', penalty: 6 },
+                    { condition: (d) => !d.product_videos, flag: 'NO_VIDEO_CONTENT', severity: 'high', penalty: 10 },
+                    { condition: (d) => !d.conversion_optimized, flag: 'LOW_CONVERSION_STORE', severity: 'critical', penalty: 15 }
+                ]
+            },
+            personal_brand: {
+                required: ['instagram', 'tiktok', 'youtube'],
+                rules: [
+                    { condition: (d) => d.platforms.length < 2, flag: 'INSUFFICIENT_PLATFORMS', severity: 'critical', penalty: 15 },
+                    { condition: (d) => ['weekly', 'monthly', 'rarely', 'never'].includes(d.posting_frequency), flag: 'LOW_CONTENT_FREQUENCY', severity: 'critical', penalty: 15 },
+                    { condition: (d) => d.followers_total < 1000, flag: 'LOW_AUDIENCE_GROWTH', severity: 'high', penalty: 10 },
+                    { condition: (d) => !d.personal_branding_consistent, flag: 'INCONSISTENT_BRAND', severity: 'medium', penalty: 6 },
+                    { condition: (d) => !d.authority_content, flag: 'NO_AUTHORITY_POSITIONING', severity: 'high', penalty: 10 }
+                ]
+            },
+            local: {
+                required: ['google_business', 'reviews'],
+                rules: [
+                    { condition: (d) => !d.platforms.includes('google_business'), flag: 'MISSING_GOOGLE_PROFILE', severity: 'critical', penalty: 20 },
+                    { condition: (d) => d.reviews_count < 10, flag: 'LOW_REVIEWS', severity: 'critical', penalty: 15 },
+                    { condition: (d) => d.rating < 4, flag: 'LOW_RATING', severity: 'high', penalty: 10 },
+                    { condition: (d) => ['rarely', 'never'].includes(d.posting_frequency), flag: 'INACTIVE_SOCIAL', severity: 'medium', penalty: 6 },
+                    { condition: (d) => !d.contact_button, flag: 'NO_CONTACT_ACCESS', severity: 'high', penalty: 10 }
+                ]
+            }
+        };
+
+        const recommendationsDB = {
+            MISSING_GOOGLE_PROFILE: { 
+                en: { title: "Create your Google Business Profile", desc: "You are not visible in local search results or Google Maps." },
+                es: { title: "Crea tu Perfil en Google", desc: "No eres visible en las búsquedas locales o en Google Maps." },
+                priority: "critical" 
+            },
+            NO_WEBSITE: { 
+                en: { title: "Build a conversion-focused website", desc: "Without a website, you have no central asset to convert visitors into clients." },
+                es: { title: "Construye un sitio web de conversión", desc: "Sin un sitio web, no tienes un lugar central para convertir visitantes en clientes." },
+                priority: "critical" 
+            },
+            NO_ECOMMERCE_STORE: { 
+                en: { title: "Launch your online store", desc: "You currently have no platform to sell your products online." },
+                es: { title: "Lanza tu tienda en línea", desc: "Actualmente no tienes plataforma para vender tus productos en línea." },
+                priority: "critical" 
+            },
+            MISSING_LINKEDIN: { 
+                en: { title: "Create a LinkedIn presence", desc: "You are missing a key platform for professional visibility." },
+                es: { title: "Crea presencia en LinkedIn", desc: "Te falta una plataforma clave para la visibilidad profesional." },
+                priority: "high" 
+            },
+            MISSING_INSTAGRAM: { 
+                en: { title: "Set up Instagram for your brand", desc: "Instagram is a primary channel for visibility and growth in your model." },
+                es: { title: "Configura Instagram", desc: "Instagram es un canal principal para la visibilidad y el crecimiento." },
+                priority: "critical" 
+            },
+            MISSING_TIKTOK: { 
+                en: { title: "Start using TikTok for reach", desc: "You are missing a high-growth channel for organic traffic." },
+                es: { title: "Usa TikTok para más alcance", desc: "Te falta un canal de alto crecimiento para el tráfico orgánico." },
+                priority: "critical" 
+            },
+            LOW_CONTENT_ACTIVITY: { 
+                en: { title: "Increase your posting frequency", desc: "Low activity reduces visibility and slows growth." },
+                es: { title: "Aumenta la frecuencia de publicación", desc: "La baja actividad reduce la visibilidad y ralentiza el crecimiento." },
+                priority: "high" 
+            },
+            LOW_CONTENT_VOLUME: { 
+                en: { title: "Increase content output", desc: "Your content volume is too low to drive traffic." },
+                es: { title: "Aumenta el volumen de contenido", desc: "El volumen de tu contenido es muy bajo para atraer tráfico." },
+                priority: "high" 
+            },
+            LOW_CONTENT_FREQUENCY: { 
+                en: { title: "Increase content frequency", desc: "Personal brands die without consistent touchpoints." },
+                es: { title: "Aumenta la frecuencia", desc: "Las marcas personales mueren sin puntos de contacto constantes." },
+                priority: "critical" 
+            },
+            LOW_AUDIENCE: { 
+                en: { title: "Grow your audience base", desc: "Your current audience size limits reach and conversions." },
+                es: { title: "Haz crecer tu audiencia", desc: "El tamaño actual de tu audiencia limita tu alcance y conversiones." },
+                priority: "medium" 
+            },
+            NO_VIDEO_CONTENT: { 
+                en: { title: "Start creating video content", desc: "Video is the main driver of reach and engagement." },
+                es: { title: "Crea contenido en video", desc: "El video es el principal motor de alcance y participación." },
+                priority: "high" 
+            },
+            LOW_CONVERSION_STORE: { 
+                en: { title: "Optimize store conversions", desc: "Your store likely gets traffic but fails to convert." },
+                es: { title: "Optimiza la conversión de tu tienda", desc: "Tu tienda recibe tráfico pero falla en la conversión." },
+                priority: "critical" 
+            },
+            NO_LEAD_CAPTURE: { 
+                en: { title: "Add a lead capture system", desc: "You are losing potential clients by not capturing emails." },
+                es: { title: "Añade un sistema de captura de leads", desc: "Estás perdiendo clientes al no capturar sus datos." },
+                priority: "critical" 
+            },
+            NO_SOCIAL_PROOF: { 
+                en: { title: "Build social proof", desc: "Lack of testimonials or reviews reduces trust." },
+                es: { title: "Construye prueba social", desc: "La falta de testimonios reduce la confianza de los clientes." },
+                priority: "high" 
+            },
+            LOW_REVIEWS: { 
+                en: { title: "Increase your review count", desc: "Low number of reviews reduces credibility." },
+                es: { title: "Aumenta tus reseñas", desc: "El bajo número de reseñas reduce la credibilidad de tu negocio." },
+                priority: "critical" 
+            },
+            LOW_RATING: { 
+                en: { title: "Improve your customer rating", desc: "A low rating impacts trust and reduces conversions." },
+                es: { title: "Mejora la calificación de clientes", desc: "Una baja calificación afecta la confianza y reduce ventas." },
+                priority: "high" 
+            },
+            NO_CONTACT_ACCESS: { 
+                en: { title: "Make it easier to contact you", desc: "Users cannot easily reach you, killing conversions." },
+                es: { title: "Facilita el contacto", desc: "Los usuarios no pueden contactarte fácilmente." },
+                priority: "high" 
+            },
+            INSUFFICIENT_PLATFORMS: { 
+                en: { title: "Expand your platform presence", desc: "You rely on too few platforms, limiting growth." },
+                es: { title: "Expande tus plataformas", desc: "Dependes de muy pocas plataformas, lo que limita el crecimiento." },
+                priority: "critical" 
+            },
+            LOW_AUDIENCE_GROWTH: { 
+                en: { title: "Focus on audience growth", desc: "Your growth rate is too slow to build authority." },
+                es: { title: "Enfócate en crecer tu audiencia", desc: "Tu tasa de crecimiento es demasiado lenta para construir autoridad." },
+                priority: "high" 
+            },
+            INCONSISTENT_BRAND: { 
+                en: { title: "Standardize brand identity", desc: "Inconsistent branding weakens recognition." },
+                es: { title: "Estandariza tu identidad", desc: "Una marca inconsistente debilita el reconocimiento." },
+                priority: "medium" 
+            },
+            NO_AUTHORITY_POSITIONING: { 
+                en: { title: "Position as an authority", desc: "You are not creating content that builds expertise." },
+                es: { title: "Posiciónate como autoridad", desc: "No creas contenido que construya experiencia en tu nicho." },
+                priority: "high" 
+            },
+            INACTIVE_SOCIAL: { 
+                en: { title: "Revive social channels", desc: "An inactive social profile looks like a closed business." },
+                es: { title: "Revive tus redes sociales", desc: "Un perfil inactivo parece un negocio cerrado." },
+                priority: "medium" 
+            }
+        };
+
+        const priorityOrder = { critical: 1, high: 2, medium: 3 };
+
+        // --- LANGUAGE LOGIC ---
+        function applyTranslations() {
+            const lang = state.language;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+
+            document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                const key = el.getAttribute('data-i18n-ph');
+                if (translations[lang][key]) {
+                    el.setAttribute('placeholder', translations[lang][key]);
+                }
+            });
+            
+            if (state.currentStep === 4) populateDynamicQuestions();
+            if (state.currentStep === 5) renderRecommendations();
+
+            const bTypeNames = { 
+                en: { service: 'Service', ecommerce: 'E-commerce', personal_brand: 'Personal Brand', local: 'Local' },
+                es: { service: 'Servicios', ecommerce: 'E-commerce', personal_brand: 'Marca Personal', local: 'Local' }
+            };
+            
+            if(state.data.business_type) {
+                const typeEl = document.getElementById('loading-biz-type');
+                if(typeEl) typeEl.innerText = bTypeNames[lang][state.data.business_type];
+            }
+
+            if (lang === 'en') {
+                document.getElementById('lang-en').classList.replace('text-gray-400', 'text-sys-primary');
+                document.getElementById('lang-es').classList.replace('text-sys-primary', 'text-gray-400');
+            } else {
+                document.getElementById('lang-es').classList.replace('text-gray-400', 'text-sys-primary');
+                document.getElementById('lang-en').classList.replace('text-sys-primary', 'text-gray-400');
+            }
+        }
+
+        function toggleLanguage() {
+            state.language = state.language === 'en' ? 'es' : 'en';
+            localStorage.setItem('audit_lang', state.language);
+            applyTranslations();
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            applyTranslations();
+        });
+
+        // --- 3. UI NAVIGATION LOGIC ---
+        function updateProgress() {
+            const bar = document.getElementById('progress-bar');
+            const container = document.getElementById('progress-container');
+            const pageIndicator = document.getElementById('step-indicator');
+            const currentPageNum = document.getElementById('current-page');
+            
+            if (state.currentStep === 0 || state.currentStep > state.totalSteps) {
+                container.classList.add('hidden');
+                pageIndicator.classList.add('hidden');
+            } else {
+                container.classList.remove('hidden');
+                pageIndicator.classList.remove('hidden');
+                
+                const percentage = (state.currentStep / state.totalSteps) * 100;
+                bar.style.width = `${percentage}%`;
+                currentPageNum.innerText = state.currentStep;
+            }
+        }
+
+        function showStep(stepIndex) {
+            document.querySelectorAll('.step-section').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('fade-in-up');
+            });
+            
+            const target = document.getElementById(stepIndex === 5 ? 'results-dashboard' : `step-${stepIndex}`);
+            if (target) {
+                target.classList.remove('hidden');
+                void target.offsetWidth; 
+                target.classList.add('fade-in-up');
+            }
+            
+            // Toggle Background Image Layer for Pages 1-4
+            const bgLayer = document.getElementById('form-bg-layer');
+            if (bgLayer) {
+                if (stepIndex >= 1 && stepIndex <= 4) {
+                    bgLayer.classList.remove('opacity-0');
+                    bgLayer.classList.add('opacity-100');
+                } else {
+                    bgLayer.classList.remove('opacity-100');
+                    bgLayer.classList.add('opacity-0');
+                }
+            }
+            
+            state.currentStep = stepIndex;
+            updateProgress();
+
+            if (stepIndex === 4) populateDynamicQuestions();
+        }
+
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgClass = type === 'error' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-green-50 border-green-200 text-green-800';
+            const iconColor = type === 'error' ? 'text-red-500' : 'text-green-500';
+            const iconSvg = type === 'error' ? 
+                `<svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` : 
+                `<svg class="w-5 h-5 ${iconColor}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+
+            toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${bgClass} toast-enter pointer-events-auto transition-all`;
+            toast.innerHTML = `
+                ${iconSvg}
+                <span class="font-medium text-sm">${message}</span>
+                <button onclick="this.parentElement.remove()" class="ml-2 text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                if(toast.parentElement) {
+                    toast.classList.replace('toast-enter', 'toast-exit');
+                    setTimeout(() => toast.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        function highlightError(elementId) {
+            const el = document.getElementById(elementId);
+            if(el) {
+                el.classList.add('input-error');
+                setTimeout(() => el.classList.remove('input-error'), 3500);
+            }
+        }
+
+        function simulateLoadingBtn(btn, callback) {
+            if(!btn) {
+                callback();
+                return;
+            }
+            const originalHtml = btn.innerHTML;
+            const lang = state.language;
+            const loadingText = translations[lang]['saving'];
+            
+            btn.innerHTML = `<div class="flex items-center justify-center space-x-2">
+                                <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>${loadingText}</span>
+                             </div>`;
+            btn.disabled = true;
+            btn.classList.add('opacity-80', 'cursor-not-allowed');
+
+            setTimeout(() => {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                btn.classList.remove('opacity-80', 'cursor-not-allowed');
+                callback();
+            }, 3000); // 3 seconds simulation
+        }
+
+        function nextStep(btn) {
+            if (validateStep(state.currentStep)) {
+                // If it's a form step, simulate loading. Otherwise just jump (like the start screen)
+                if(state.currentStep > 0 && state.currentStep < 4) {
+                    simulateLoadingBtn(btn, () => {
+                        saveStepData(state.currentStep);
+                        showStep(state.currentStep + 1);
+                    });
+                } else {
+                    saveStepData(state.currentStep);
+                    showStep(state.currentStep + 1);
+                }
+            }
+        }
+
+        function prevStep() {
+            if (state.currentStep > 0) {
+                showStep(state.currentStep - 1);
+            }
+        }
+
+        // --- 4. DATA VALIDATION & COLLECTION ---
+        function validateStep(step) {
+            const lang = state.language;
+            let isValid = true;
+
+            if (step === 1) {
+                const nameInput = document.getElementById('input-name');
+                const emailInput = document.getElementById('input-email');
+                const type = document.querySelector('input[name="business_type"]:checked');
+                
+                if (!nameInput.value.trim()) { highlightError('input-name'); isValid = false; }
+                if (!emailInput.value.trim()) { highlightError('input-email'); isValid = false; }
+                
+                if (!isValid || !type) {
+                    showToast(translations[lang]['alert_fill_all'], 'error');
+                    return false;
+                }
+            }
+            if (step === 3) {
+                const freqInput = document.getElementById('input-posting');
+                const audInput = document.getElementById('input-audience');
+                
+                if (!freqInput.value) { highlightError('input-posting'); isValid = false; }
+                if (!audInput.value) { highlightError('input-audience'); isValid = false; }
+
+                if (!isValid) {
+                    showToast(translations[lang]['alert_select_act'], 'error');
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function saveStepData(step) {
+            if (step === 1) {
+                state.data.name = document.getElementById('input-name').value;
+                state.data.email = document.getElementById('input-email').value;
+                state.data.business_type = document.querySelector('input[name="business_type"]:checked').value;
+            }
+            if (step === 2) {
+                state.data.platforms = Array.from(document.querySelectorAll('input[name="platform"]:checked')).map(cb => cb.value);
+            }
+            if (step === 3) {
+                state.data.posting_frequency = document.getElementById('input-posting').value;
+                state.data.followers_total = parseInt(document.getElementById('input-audience').value);
+            }
+            if (step === 4) {
+                const fields = ['reviews', 'lead_capture', 'contact_button', 'product_videos', 'conversion_optimized', 'personal_branding_consistent', 'authority_content'];
+                fields.forEach(f => {
+                    const el = document.getElementById(`dyn-${f}`);
+                    if (el) state.data[f] = el.checked;
+                });
+
+                const revCount = document.getElementById('dyn-reviews_count');
+                if (revCount) state.data.reviews_count = parseInt(revCount.value) || 0;
+
+                const rating = document.getElementById('dyn-rating');
+                if (rating) state.data.rating = parseFloat(rating.value) || 0;
+            }
+        }
+
+        function populateDynamicQuestions() {
+            const container = document.getElementById('dynamic-questions');
+            container.innerHTML = ''; 
+            
+            const type = state.data.business_type;
+            const t = translations[state.language];
+            let html = '';
+
+            const checkboxTpl = (id, label) => `
+                <label class="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-white bg-white/80 backdrop-blur-sm transition-all">
+                    <input type="checkbox" id="dyn-${id}" class="w-5 h-5 text-sys-primary rounded focus:ring-sys-primary accent-sys-primary">
+                    <span class="font-medium text-sys-title">${label}</span>
+                </label>`;
+
+            const inputTpl = (id, label, ph, inptype="number") => `
+                <div class="p-1">
+                    <label class="block text-sm font-medium text-sys-title mb-1">${label}</label>
+                    <input type="${inptype}" id="dyn-${id}" placeholder="${ph}" class="w-full px-4 py-3 rounded-lg border border-gray-200 hover:border-sys-primary/50 hover:bg-white hover:shadow-sm focus:border-sys-primary focus:ring-2 focus:ring-sys-primary/20 focus:bg-white outline-none bg-white/80 backdrop-blur-sm transition-all">
+                </div>`;
+
+            if (type === 'service') {
+                html += checkboxTpl('reviews', t['dyn_service_rev']);
+                html += checkboxTpl('lead_capture', t['dyn_service_lead']);
+            } else if (type === 'ecommerce') {
+                html += checkboxTpl('product_videos', t['dyn_ecom_vid']);
+                html += checkboxTpl('conversion_optimized', t['dyn_ecom_conv']);
+            } else if (type === 'personal_brand') {
+                html += checkboxTpl('authority_content', t['dyn_pb_auth']);
+                html += checkboxTpl('personal_branding_consistent', t['dyn_pb_cons']);
+            } else if (type === 'local') {
+                html += checkboxTpl('reviews', t['dyn_local_rev']);
+                html += inputTpl('reviews_count', t['dyn_local_rev_count'], t['dyn_local_rev_ph']);
+                html += inputTpl('rating', t['dyn_local_rating'], '4.5');
+                html += checkboxTpl('contact_button', t['dyn_local_contact']);
+            }
+
+            container.innerHTML = html;
+        }
+
+        // --- 5. ENGINE LOGIC & PROCESSING ---
+        function runDiagnostics() {
+            const rulesDef = businessRules[state.data.business_type];
+            let penaltyAccumulator = 0;
+            let flagsList = [];
+
+            if (rulesDef && rulesDef.rules) {
+                rulesDef.rules.forEach(rule => {
+                    if (rule.condition(state.data)) {
+                        flagsList.push({ id: rule.flag, severity: rule.severity });
+                        penaltyAccumulator += rule.penalty;
+                    }
+                });
+            }
+
+            state.results.score = Math.max(0, 100 - penaltyAccumulator);
+            state.results.flags = flagsList;
+            
+            const lang = state.language;
+            let recs = flagsList.map(f => {
+                const dbEntry = recommendationsDB[f.id];
+                if(dbEntry) {
+                    return { title: dbEntry[lang].title, desc: dbEntry[lang].desc, id: f.id, severity: f.severity, priority: dbEntry.priority };
+                }
+            }).filter(r => r && r.title);
+
+            recs.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+            state.results.recommendations = recs.slice(0, 4);
+        }
+
+        function processResults(btn) {
+            saveStepData(4);
+            runDiagnostics();
+            
+            const lang = state.language;
+            const bTypeNames = { 
+                en: { service: 'Service', ecommerce: 'E-commerce', personal_brand: 'Personal Brand', local: 'Local' },
+                es: { service: 'Servicios', ecommerce: 'E-commerce', personal_brand: 'Marca Personal', local: 'Local' }
+            };
+            
+            document.getElementById('loading-biz-type').innerText = bTypeNames[lang][state.data.business_type];
+            document.getElementById('loading-overlay').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('loading-overlay').classList.add('hidden');
+                document.getElementById('success-modal-overlay').classList.remove('hidden');
+                fireConfetti();
+                submitAuditToBackend(); 
+            }, 4000); // Wait 4 seconds for full dramatic processing
+        }
+
+        function fireConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              var particleCount = 50 * (timeLeft / duration);
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+              });
+              confetti({
+                ...defaults, particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+              });
+            }, 250);
+        }
+
+        // --- 6. RENDER RESULTS ---
+        let donutChart = null;
+
+        function showResults() {
+            document.getElementById('success-modal-overlay').classList.add('hidden');
+            showStep(5); 
+            renderChart();
+            renderRecommendations();
+            animateValue("final-score-text", 0, state.results.score, 1500);
+        }
+
+        function closeModalOnly() {
+            document.getElementById('success-modal-overlay').classList.add('hidden');
+            showResults();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const score = state.results.score;
+            
+            if (donutChart) donutChart.destroy();
+
+            donutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: ['#8b84f5', '#f2f1fb'],
+                        borderWidth: 0,
+                        cutout: '80%',
+                        borderRadius: [10, 0]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { animateScale: true, animateRotate: true, duration: 1500 },
+                    plugins: { tooltip: { enabled: false }, legend: { display: false } }
+                }
+            });
+        }
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const easeProgress = progress * (2 - progress);
+                obj.innerHTML = Math.floor(easeProgress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                } else {
+                    obj.innerHTML = end; 
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function renderRecommendations() {
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = '';
+            const t = translations[state.language];
+
+            if (state.results.recommendations.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-green-50 border border-green-200 rounded-xl p-5">
+                        <h4 class="font-bold text-green-800 mb-1">${t['rec_excel_title']}</h4>
+                        <p class="text-sm text-green-600">${t['rec_excel_desc']}</p>
+                    </div>`;
+                return;
+            }
+
+            state.results.recommendations.forEach(rec => {
+                let badgeColor = rec.priority === 'critical' ? 'bg-red-100 text-red-700' : 
+                                 rec.priority === 'high' ? 'bg-orange-100 text-orange-700' : 
+                                 'bg-blue-100 text-blue-700';
+                
+                const icon = rec.priority === 'critical' ? 
+                    `<svg class="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>` : 
+                    `<svg class="w-5 h-5 text-orange-500 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+
+                html = `
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 hover:border-sys-primary/50 transition-colors shadow-sm fade-in-up">
+                        <div class="flex items-start">
+                            ${icon}
+                            <div>
+                                <div class="flex items-center gap-3 mb-1">
+                                    <h4 class="font-bold text-sys-title">${rec.title}</h4>
+                                    <span class="text-xs px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide ${badgeColor}">${rec.priority}</span>
+                                </div>
+                                <p class="text-sm text-sys-text">${rec.desc}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // --- 7. EXTERNAL INTEGRATION (Google Apps Script / Webhook) ---
+        async function submitAuditToBackend() {
+            const payload = {
+                name: state.data.name,
+                email: state.data.email,
+                business_type: state.data.business_type,
+                total_score: state.results.score,
+                flags: state.results.flags.map(f => f.id),
+                raw_answers: state.data
+            };
+
+            console.log("Sending payload to webhook:", payload);
+
+            const WEBHOOK_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec"; 
+
+            try {
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', 
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                console.log("Data successfully dispatched to integration pipeline.");
+            } catch (error) {
+                console.error("Webhook dispatch failed:", error);
+            }
+        }
+
+    </script>
+</body>
+</html>
