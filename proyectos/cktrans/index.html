@@ -240,10 +240,13 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%) scale(0.5);
+        
+        /* Updated Responsive Sizing */
         width: 80vw;
         height: 80vw;
         max-width: 600px;
         max-height: 600px;
+        
         background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/d7ef969840a2d46c5c67cc38e1c79d18fc69e8a1.png');
         background-size: contain;
         background-repeat: no-repeat;
@@ -335,10 +338,10 @@
         #mainUI {
           flex-direction: column;
           width: 90%;
-          min-height: auto; /* Allow natural breathing space without forced height */
+          min-height: auto;
           height: auto;
-          max-height: 90vh; /* Leave gap on top and bottom of screen */
-          overflow-y: auto; /* Internal scroll ONLY if the screen is tiny */
+          max-height: 90vh;
+          overflow-y: auto;
         }
         .left-col {
           padding: 40px 30px 30px 30px;
@@ -361,22 +364,19 @@
           padding: 14px 30px;
           margin-bottom: 10px;
         }
-        /* Put credits in normal flow so they don't overlap */
         .credits {
           position: relative;
           bottom: auto;
           margin-top: 25px;
         }
         .right-col {
-          height: 250px; /* Fixed height for image banner on mobile */
+          height: 250px;
           flex: none;
           width: 100%;
         }
-        /* Gradient fade from top-to-bottom so it blends with text section above */
         .right-col::after {
           background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 40%);
         }
-        /* Shrink language toggle slightly to avoid touching content */
         #langToggle {
           top: 15px;
           right: 15px;
@@ -392,21 +392,21 @@
           padding: 30px 20px 25px 20px;
         }
         .brand-logo {
-          width: 75px;
-          height: 75px;
+          width: 150px;
+          height: 150px;
         }
         .left-col h1 {
           font-size: 24px;
         }
         .left-col p.description {
-          font-size: 14px;
+          font-size: 16px;
         }
         #portalButton {
           padding: 12px 28px;
           font-size: 15px;
         }
         .right-col {
-          height: 700px; /* Adjust image height for very small screens */
+          height: 500px;
         }
       }
     </style>
