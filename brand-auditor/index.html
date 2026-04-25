@@ -58,6 +58,7 @@
         }
     </script>
 
+   
     <style>
         body {
             background-color: #f2f1fb;
@@ -158,28 +159,28 @@
         @media print {
             @page {
                 size: A4 portrait;
-                margin: 12mm;
+                margin: 8mm;
             }
             body, html {
                 background-color: #f2f1fb !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
                 margin: 0 !important;
-                padding: 0 !important;
+                padding: 20px !important; /* Adds the background frame */
                 min-height: auto !important;
                 display: block !important;
-                width: 100% !important;
             }
             main {
                 box-shadow: none !important;
                 max-width: 100% !important;
-                width: 100% !important;
-                border: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
+                width: auto !important; 
+                border: 1px solid #e5e7eb !important;
+                border-radius: 20px !important; /* Restores the rounded card look */
+                padding: 30px !important; /* Inner padding of the white card */
+                margin: 0 auto !important;
                 min-height: auto !important;
                 display: block !important;
-                background-color: transparent !important;
+                background-color: #ffffff !important; /* Force white card background */
             }
             main > div.flex-1 {
                 padding: 0 !important;
