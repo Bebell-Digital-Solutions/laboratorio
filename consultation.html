@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Consulta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { 
+            /* Change this hex code to match your brand color */
+            --color-highlight: #6366f1; 
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
+    <!-- Header Section -->
+    <div class="w-full h-64 bg-[url('https://bucket.mlcdn.com/a/3336/3336910/images/7fde2c07601126567834885a7b61bd98ca8ecf31.png')] bg-cover bg-center relative shrink-0">
+        <div class="absolute inset-0 bg-slate-800/80 mix-blend-multiply"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 mb-8">
+            <h2 class="text-4xl font-extrabold text-white mb-3">Agendar Consulta</h2>
+            <p class="text-white/80 max-w-2xl text-lg">Seleccione la fecha y hora que mejor le convenga.</p>
+        </div>
+    </div>
+
+    <!-- Calendar Embed Container -->
+    <div class="flex-1 px-6 pb-10 flex justify-center relative z-10 -mt-16">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-4xl flex flex-col overflow-hidden min-h-[600px] p-4">
+            <!-- Cal inline embed element -->
+            <div style="width:100%;height:100%;overflow:auto" id="my-cal-inline-consulta-gratuita"></div>
+            
+            <script type="text/javascript">
+                (function (C, A, L) {
+                    let p = function (a, ar) { a.q.push(ar); };
+                    let d = C.document;
+                    C.Cal = C.Cal || function () {
+                        let cal = C.Cal;
+                        let ar = arguments;
+                        if (!cal.loaded) {
+                            cal.ns = {};
+                            cal.q = cal.q || [];
+                            d.head.appendChild(d.createElement("script")).src = A;
+                            cal.loaded = true;
+                        }
+                        if (ar[0] === L) {
+                            const api = function () { p(api, arguments); };
+                            const namespace = ar[1];
+                            api.q = api.q || [];
+                            if (typeof namespace === "string") { cal.ns[namespace] = cal.ns[namespace] || api; p(cal.ns[namespace], ar); p(cal, ["initNamespace", namespace]); } else p(cal, ar);
+                            return;
+                        }
+                        p(cal, ar);
+                    };
+                })(window, "https://app.cal.com/embed/embed.js", "init");
+
+                Cal("init", "consulta-gratuita", { origin: "https://app.cal.com" });
+                
+                Cal.ns["consulta-gratuita"]("inline", {
+                    elementOrSelector: "#my-cal-inline-consulta-gratuita",
+                    config: { "layout": "month_view", "useSlotsViewOnSmallScreen": "true", "theme": "light" },
+                    calLink: "bebell-digital-solutions/consulta-gratuita",
+                });
+
+                // Set UI properties including the brand color from our CSS variable
+                const brandColor = getComputedStyle(document.documentElement).getPropertyValue('--color-highlight').trim();
+                Cal.ns["consulta-gratuita"]("ui", {
+                    "theme": "light",
+                    "cssVarsPerTheme": {
+                        "light": { "cal-brand": brandColor },
+                        "dark": { "cal-brand": brandColor }
+                    },
+                    "hideEventTypeDetails": false,
+                    "layout": "month_view"
+                });
+            </script>
+        </div>
+    </div>
+</body>
+</html>
