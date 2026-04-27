@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Kanban Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { primary: '#8b84f4', highlight: '#e07cd0', bg: '#f1f0fb' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { background-color: #f1f0fb; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* 3D Glossy / Matte Plastic UI Effects */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 10px 30px -10px rgba(139, 132, 244, 0.2), inset 0 2px 0 0 rgba(255,255,255,0.9);
+            border-radius: 1.25rem;
+        }
+
+        .kanban-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid rgba(255,255,255,1);
+            box-shadow: 0 4px 12px rgba(139, 132, 244, 0.15), inset 0 2px 0 rgba(255,255,255,1);
+            border-radius: 1rem;
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+            transform: scale(0.98);
+            box-shadow: 0 2px 5px rgba(139, 132, 244, 0.2), inset 0 3px 5px rgba(0,0,0,0.05);
+        }
+
+        .kanban-column {
+            background: rgba(226, 232, 240, 0.4);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .glossy-btn {
+            background: linear-gradient(180deg, #e07cd0 0%, #c462b5 100%);
+            box-shadow: 0 4px 15px rgba(224, 124, 208, 0.4), inset 0 2px 0 rgba(255,255,255,0.4);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .glossy-btn:active {
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(2px);
+        }
+
+        /* Ghost element when dragging */
+        .sortable-ghost { opacity: 0.4; background-color: #e2e8f0; }
+        
+        /* Modal Animation */
+        .modal-enter { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="h-screen w-full overflow-hidden p-6 text-slate-800">
+
+    <header class="flex justify-between items-center mb-6 glass-panel p-4">
+        <h1 class="text-2xl font-bold text-brand-primary flex items-center gap-3">
+            <i class="fa-solid fa-chart-pie"></i> Funnel CRM
+        </h1>
+        <div class="flex items-center gap-4">
+            <span id="sync-status" class="text-sm font-medium text-slate-500">
+                <i class="fa-solid fa-cloud text-brand-primary"></i> Synced
+            </span>
+            <button onclick="loadBoardData()" class="glossy-btn px-4 py-2 rounded-full font-semibold text-sm">
+                <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+            </button>
+        </div>
+    </header>
+
+    <div class="flex h-[calc(100vh-120px)] gap-6 overflow-x-auto pb-4">
+        
+        <div class="w-80 min-w-[320px] flex flex-col">
+            <div class="mb-3 px-2 flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">Pending</h2>
+                <span id="count-pending" class="bg-brand-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-inner">0</span>
+            </div>
+            <div id="col-pending" data-status="Pending" class="kanban-column flex-1 p-3 overflow-y-auto space-y-3">
+                </div>
+        </div>
+
+        <div class="w-80 min-w-[320px] flex flex-col">
+            <div class="mb-3 px-2 flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">Dashboard Created</h2>
+                <span id="count-created" class="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-inner">0</span>
+            </div>
+            <div id="col-created" data-status="Created" class="kanban-column flex-1 p-3 overflow-y-auto space-y-3"></div>
+        </div>
+
+        <div class="w-80 min-w-[320px] flex flex-col">
+            <div class="mb-3 px-2 flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">Deployed</h2>
+                <span id="count-deployed" class="bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-inner">0</span>
+            </div>
+            <div id="col-deployed" data-status="Deployed" class="kanban-column flex-1 p-3 overflow-y-auto space-y-3"></div>
+        </div>
+
+        <div class="w-80 min-w-[320px] flex flex-col">
+            <div class="mb-3 px-2 flex justify-between items-center">
+                <h2 class="font-bold text-slate-700">Contacted</h2>
+                <span id="count-contacted" class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-inner">0</span>
+            </div>
+            <div id="col-contacted" data-status="Contacted" class="kanban-column flex-1 p-3 overflow-y-auto space-y-3"></div>
+        </div>
+
+    </div>
+
+    <div id="details-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden justify-center items-center z-50">
+        <div class="glass-panel w-full max-w-md p-6 modal-enter relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 id="modal-title" class="text-xl font-bold text-brand-primary mb-1">Dashboard Name</h3>
+            <p id="modal-uid" class="text-xs text-slate-400 font-mono mb-4">UID: </p>
+            
+            <div class="space-y-4">
+                <div class="bg-white/50 p-3 rounded-lg border border-white">
+                    <p class="text-sm text-slate-500">Current Status</p>
+                    <p id="modal-status" class="font-semibold text-slate-800"></p>
+                </div>
+                <div class="bg-white/50 p-3 rounded-lg border border-white">
+                    <p class="text-sm text-slate-500 mb-2">Timeline</p>
+                    <ul id="modal-timeline" class="text-sm space-y-2 relative border-l-2 border-brand-bg ml-2 pl-3">
+                        </ul>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex justify-end">
+                <a id="modal-link" href="#" target="_blank" class="glossy-btn px-5 py-2 rounded-full font-semibold text-sm">
+                    Open Dashboard <i class="fa-solid fa-arrow-up-right-from-square ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // Replace with your actual Apps Script Web App URL
+        const API_URL = "https://script.google.com/macros/s/YOUR_ACTUAL_APP_SCRIPT_ID/exec"; 
+        
+        let dashboardData = {};
+
+        // --- INITIALIZE KANBAN COLUMNS ---
+        const columns = ['Pending', 'Created', 'Deployed', 'Contacted'];
+        const colIds = { 'Pending': 'col-pending', 'Created': 'col-created', 'Deployed': 'col-deployed', 'Contacted': 'col-contacted' };
+
+        columns.forEach(status => {
+            new Sortable(document.getElementById(colIds[status]), {
+                group: 'shared', 
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    const itemEl = evt.item;
+                    const newStatus = evt.to.getAttribute('data-status');
+                    const uid = itemEl.getAttribute('data-uid');
+                    
+                    if (evt.from !== evt.to) {
+                        updateCardStatus(uid, newStatus, itemEl);
+                    }
+                },
+            });
+        });
+
+        // --- FETCH & RENDER DATA ---
+        async function loadBoardData() {
+            setSyncStatus("Fetching...", "animate-pulse text-amber-500");
+            try {
+                // Fetching Admin data to get Config and Users
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getAdminData' })
+                });
+                const resData = await response.json();
+                
+                if(resData.success) {
+                    renderBoard(resData.data.config);
+                    setSyncStatus("Synced", "text-slate-500");
+                }
+            } catch (error) {
+                console.error(error);
+                setSyncStatus("Offline", "text-red-500");
+            }
+        }
+
+        function renderBoard(configRows) {
+            // Clear current board
+            Object.values(colIds).forEach(id => document.getElementById(id).innerHTML = '');
+            const counts = { 'Pending': 0, 'Created': 0, 'Deployed': 0, 'Contacted': 0 };
+
+            // Start from index 1 to skip headers
+            for (let i = 1; i < configRows.length; i++) {
+                const row = configRows[i];
+                const uid = row[0];
+                const dashName = row[1];
+                const url = row[10];
+                
+                // Assuming you add "Funnel Status" at index 12 and "Timestamps" at index 13
+                // Fallback to 'Pending' if empty
+                const status = row[12] || 'Pending'; 
+                const historyJSON = row[13] || '[]'; 
+                let history = [];
+                try { history = JSON.parse(historyJSON); } catch(e){}
+
+                dashboardData[uid] = { name: dashName, status: status, url: url, history: history };
+
+                const cardHtml = `
+                    <div class="kanban-card p-4 relative" data-uid="${uid}" onclick="openModal('${uid}')">
+                        <div class="w-10 h-10 rounded-full bg-brand-bg flex items-center justify-center text-brand-primary font-bold shadow-inner mb-3">
+                            ${dashName.substring(0, 2).toUpperCase()}
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm leading-tight">${dashName}</h3>
+                        <p class="text-xs text-slate-400 mt-1"><i class="fa-regular fa-clock"></i> ${formatLastUpdate(history)}</p>
+                    </div>
+                `;
+
+                const colId = colIds[status] || colIds['Pending'];
+                document.getElementById(colId).insertAdjacentHTML('beforeend', cardHtml);
+                counts[status]++;
+            }
+
+            // Update counters
+            document.getElementById('count-pending').innerText = counts['Pending'];
+            document.getElementById('count-created').innerText = counts['Created'];
+            document.getElementById('count-deployed').innerText = counts['Deployed'];
+            document.getElementById('count-contacted').innerText = counts['Contacted'];
+        }
+
+        // --- UPDATE STATUS LOGIC ---
+        async function updateCardStatus(uid, newStatus, cardElement) {
+            setSyncStatus("Saving...", "animate-pulse text-brand-primary");
+            
+            // Add visual timestamp locally for immediate UI response
+            const now = new Date().toISOString();
+            if(!dashboardData[uid].history) dashboardData[uid].history = [];
+            dashboardData[uid].history.push({ status: newStatus, time: now });
+            dashboardData[uid].status = newStatus;
+            
+            // Recalculate counts visually
+            updateCounts();
+
+            try {
+                // Call the new backend endpoint to save state
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'updateKanbanState', 
+                        uid: uid, 
+                        status: newStatus,
+                        timestamp: now
+                    })
+                });
+                
+                const data = await response.json();
+                if(data.success) {
+                    setSyncStatus("Saved", "text-slate-500");
+                } else {
+                    throw new Error("Backend save failed");
+                }
+            } catch (error) {
+                console.error(error);
+                setSyncStatus("Error saving", "text-red-500");
+                // In a production app, you might want to revert the card drop here
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        function openModal(uid) {
+            const data = dashboardData[uid];
+            if(!data) return;
+
+            document.getElementById('modal-title').innerText = data.name;
+            document.getElementById('modal-uid').innerText = "UID: " + uid;
+            document.getElementById('modal-status').innerText = data.status;
+            document.getElementById('modal-link').href = data.url;
+
+            const timelineEl = document.getElementById('modal-timeline');
+            timelineEl.innerHTML = '';
+            
+            if(data.history.length === 0) {
+                timelineEl.innerHTML = '<li class="text-slate-400 italic">No activity recorded</li>';
+            } else {
+                data.history.forEach(event => {
+                    const date = new Date(event.time);
+                    timelineEl.innerHTML += `
+                        <li class="relative">
+                            <span class="absolute -left-[21px] top-1.5 w-2 h-2 rounded-full bg-brand-primary"></span>
+                            <strong class="text-slate-700">${event.status}</strong>
+                            <p class="text-xs text-slate-400">${date.toLocaleString()}</p>
+                        </li>
+                    `;
+                });
+            }
+
+            document.getElementById('details-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeModal() {
+            document.getElementById('details-modal').classList.replace('flex', 'hidden');
+        }
+
+        // --- UTILS ---
+        function setSyncStatus(text, classes) {
+            const el = document.getElementById('sync-status');
+            el.innerHTML = `<i class="fa-solid fa-cloud"></i> ${text}`;
+            el.className = `text-sm font-medium ${classes}`;
+        }
+
+        function formatLastUpdate(history) {
+            if(!history || history.length === 0) return "Just now";
+            const last = new Date(history[history.length - 1].time);
+            return last.toLocaleDateString() + ' ' + last.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function updateCounts() {
+            const counts = { 'Pending': 0, 'Created': 0, 'Deployed': 0, 'Contacted': 0 };
+            Object.values(dashboardData).forEach(item => {
+                if(counts[item.status] !== undefined) counts[item.status]++;
+            });
+            document.getElementById('count-pending').innerText = counts['Pending'];
+            document.getElementById('count-created').innerText = counts['Created'];
+            document.getElementById('count-deployed').innerText = counts['Deployed'];
+            document.getElementById('count-contacted').innerText = counts['Contacted'];
+        }
+
+        // Initialize on load
+        window.onload = loadBoardData;
+    </script>
+</body>
+</html>
