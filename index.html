@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -9,13 +12,17 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-    
+
+
+
+
+
     <!-- Favicon -->
     <link rel="icon" href="https://cdn.shopify.com/s/files/1/0242/0175/6777/files/Logo_Bebell_-_1.gif?v=1777150054">
 
 
 
-    
+
     
     <style>
         :root {
@@ -601,229 +608,6 @@
                 <\/script>
             </body>
             </html>`;
-        };
-
-        const getQuoteHTML = () => { 
-            const t = i18n[currentLang];
-            return `<!DOCTYPE html>
-            <html>
-            <head>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <script src="https://unpkg.com/lucide@latest"><\/script>
-                <style>
-                    :root { --color-highlight: ${appState.theme.highlightColor}; }
-                    #isolated-carousel { all: initial; display: block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; box-sizing: border-box; max-width: 1200px; margin: 0 auto; width: 100%; }
-                    #isolated-carousel .carousel-container { width: 100%; position: relative; overflow: hidden; border-radius: 20px; padding: 20px; background: transparent; box-sizing: border-box; }
-                    #isolated-carousel .carousel-track { display: flex; transition: transform 0.5s ease; height: 100%; justify-content: flex-start; box-sizing: border-box; }
-                    #isolated-carousel .slide { flex: 0 0 calc(33.3333% - 10px); margin: 0 5px; box-sizing: border-box; transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; padding: 10px; border-radius: 20px; aspect-ratio: 9/16; height: auto; max-height: 80vh; background: transparent; }
-                    #isolated-carousel .slide img, #isolated-carousel .slide video { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; max-width: 100%; display: block; }
-                    #isolated-carousel .slide video { background-color: #000; background-size: cover; background-position: center; background-repeat: no-repeat; }
-                    #isolated-carousel .video-container { position: relative; width: 100%; height: 100%; cursor: pointer; border-radius: 20px; background: transparent; }
-                    #isolated-carousel .play-button { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60px; height: 60px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center; z-index: 2; transition: transform 0.2s; border: none; padding: 0; }
-                    #isolated-carousel .play-button:hover { transform: translate(-50%, -50%) scale(1.1); }
-                    #isolated-carousel .play-button::after { content: "▶"; color: white; font-size: 24px; display: block; }
-                    #isolated-carousel video::-webkit-media-controls-overlay-play-button, #isolated-carousel video::-webkit-media-controls-download-button, #isolated-carousel video::-webkit-media-controls-picture-in-picture-button, #isolated-carousel video::-webkit-media-controls-fullscreen-button { display: none !important; }
-                    #isolated-carousel .arrow { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.7); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #341d10; font-size: 24px; z-index: 10; transition: transform 0.2s; }
-                    #isolated-carousel .arrow:hover { transform: translateY(-50%) scale(1.1); }
-                    #isolated-carousel .arrow.prev { left: 15px; }
-                    #isolated-carousel .arrow.next { right: 15px; }
-                    @media (max-width: 768px) { #isolated-carousel .carousel-container { padding: 10px; } #isolated-carousel .slide { flex: 0 0 calc(100% - 10px); margin: 5px; max-height: 90vh; } #isolated-carousel .play-button { width: 50px; height: 50px; } #isolated-carousel video[poster] { background-size: cover !important; background-position: center !important; background-repeat: no-repeat !important; } #isolated-carousel video:not(.playing) { background-image: var(--poster-url) !important; } #isolated-carousel video[poster]:not(.playing)::-webkit-media-controls { display: none !important; } }
-                    @media (min-width: 769px) { #isolated-carousel .play-button { display: none; } #isolated-carousel video { autoplay: true; loop: true; } }
-                    @media (max-width: 980px) { #isolated-carousel { padding: 0 15px; } }
-                </style>
-                <script>tailwind.config = { theme: { extend: { colors: { sidebar: '#1e293b', highlight: 'var(--color-highlight)' } } } }<\/script>
-            </head>
-            <body class="bg-gray-50 font-sans min-h-screen flex flex-col">
-                <div class="w-full h-64 bg-[url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center relative shrink-0">
-                    <div class="absolute inset-0 bg-sidebar/80 mix-blend-multiply"></div>
-                    <div class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 mb-8">
-                        <h2 class="text-4xl font-extrabold text-white mb-3">${t.quote_title}</h2>
-                        <p class="text-white/80 max-w-2xl text-lg font-medium">${t.quote_sub}</p>
-                    </div>
-                </div>
-                
-                <div class="flex-1 px-6 pb-10 flex flex-col items-center relative z-10 -mt-16">
-                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-4xl p-8 mb-8">
-                        <div class="w-full min-h-[400px] border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 flex flex-col items-center justify-center text-center p-8">
-                            <i data-lucide="code-2" class="w-12 h-12 text-highlight mb-4"></i>
-                            <h3 class="text-xl font-bold text-gray-700 mb-2">${t.embed_area}</h3>
-                            <p class="text-gray-500 max-w-md">${t.embed_sub}</p>
-                        </div>
-                    </div>
-                    
-                    <div id="isolated-carousel" class="w-full max-w-4xl">
-                        <div class="carousel-container">
-                            <div class="carousel-track">
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/88e640e5d362824bb9074203bc5e751db8df6d18.jpeg" alt="Slide 1"></div>
-                                <div class="slide">
-                                    <div class="video-container">
-                                        <video controls controlsList="nodownload nopictureinpicture" muted playsinline preload="none" poster="https://bucket.mlcdn.com/a/3336/3336910/images/fc82307ad5183b1e9ea4416e357a53ca1a3b332c.png" style="--poster-url: url('https://bucket.mlcdn.com/a/3336/3336910/images/fc82307ad5183b1e9ea4416e357a53ca1a3b332c.png')">
-                                            <source src="https://cdn.shopify.com/videos/c/o/v/80f8991df12c4d8fbf807edb482f0979.mp4" type="video/mp4">
-                                        </video>
-                                        <button class="play-button" aria-label="${t.play_video}"></button>
-                                    </div>
-                                </div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/75ac2807f828dfd323ee0a8f1a5712719e9fa71f.jpeg" alt="Slide 2"></div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/cf673d5f3c784d576705d4ad2146947f033b854d.jpeg" alt="Slide 3"></div>       
-                                <div class="slide">
-                                    <div class="video-container">
-                                        <video controls controlsList="nodownload nopictureinpicture" muted playsinline preload="none" poster="https://bucket.mlcdn.com/a/3336/3336910/images/5a53647516b281fe11e291fe7830a79f00d9f02d.png" style="--poster-url: url('https://bucket.mlcdn.com/a/3336/3336910/images/5a53647516b281fe11e291fe7830a79f00d9f02d.png')">
-                                            <source src="https://cdn.shopify.com/videos/c/o/v/a3bae82789a64a1ba42192ec81f1a5da.mp4" type="video/mp4">
-                                        </video>
-                                        <button class="play-button" aria-label="${t.play_video}"></button>
-                                    </div>
-                                </div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/2cf1ef74893a66770a9260333f5582f67ea7f628.jpeg" alt="Slide 4"></div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/f7f7401d6c699be4def8626b4343e2d4ba3d8457.jpeg" alt="Slide 5"></div>
-                                <div class="slide">
-                                    <div class="video-container">
-                                        <video controls controlsList="nodownload nopictureinpicture" muted playsinline preload="none" poster="https://bucket.mlcdn.com/a/3336/3336910/images/0e6fa5e160dc534c454a0cb8236eae6a1e9d187a.png" style="--poster-url: url('https://bucket.mlcdn.com/a/3336/3336910/images/0e6fa5e160dc534c454a0cb8236eae6a1e9d187a.png')">
-                                            <source src="https://cdn.shopify.com/videos/c/o/v/1e93b2d614a64c8480dd74fc7305b906.mp4" type="video/mp4">
-                                        </video>
-                                        <button class="play-button" aria-label="${t.play_video}"></button>
-                                    </div>
-                                </div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/9dd3283381ed9c5c85030bdb323ae8d8c5526db8.jpeg" alt="Slide 6"></div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/9f9c537140b962e716364e6cf1b42d0310928628.jpeg" alt="Slide 7"></div>
-                                <div class="slide">
-                                    <div class="video-container">
-                                        <video controls controlsList="nodownload nopictureinpicture" muted playsinline preload="none" poster="https://bucket.mlcdn.com/a/3336/3336910/images/e224d7646e7bed32dd6ff3fc8b490b1c8733c72a.png" style="--poster-url: url('https://bucket.mlcdn.com/a/3336/3336910/images/e224d7646e7bed32dd6ff3fc8b490b1c8733c72a.png')">
-                                            <source src="https://cdn.shopify.com/videos/c/o/v/8842c6c3136241f29ce69849999ac8ce.mp4" type="video/mp4">
-                                        </video>
-                                        <button class="play-button" aria-label="${t.play_video}"></button>
-                                    </div>
-                                </div>
-                                <div class="slide"><img src="https://bucket.mlcdn.com/a/3336/3336910/images/f7f7401d6c699be4def8626b4343e2d4ba3d8457.jpeg" alt="Slide 8"></div>
-                            </div>
-                            <button class="arrow prev">❮</button>
-                            <button class="arrow next">❯</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <script>
-                (function() {
-                    const carousel = document.getElementById('isolated-carousel');
-                    if (!carousel) return;
-                    const track = carousel.querySelector('.carousel-track');
-                    const slides = carousel.querySelectorAll('.slide');
-                    const nextBtn = carousel.querySelector('.next');
-                    const prevBtn = carousel.querySelector('.prev');
-                    let currentIndex = 0;
-                    let autoSlideInterval;
-
-                    function initVideos() {
-                        carousel.querySelectorAll('video[poster]').forEach(video => {
-                            if (!video.style.getPropertyValue('--poster-url')) video.style.setProperty('--poster-url', "url('" + video.getAttribute('poster') + "')");
-                            if (window.innerWidth < 769 && video.paused) video.style.backgroundImage = "url('" + video.getAttribute('poster') + "')";
-                            video.addEventListener('play', function() { this.classList.add('playing'); this.style.backgroundImage = 'none'; });
-                            video.addEventListener('pause', function() { this.classList.remove('playing'); if (window.innerWidth < 769) this.style.backgroundImage = "url('" + this.getAttribute('poster') + "')"; });
-                        });
-                    }
-
-                    function initVideoButtons() {
-                        carousel.querySelectorAll('.play-button').forEach(button => {
-                            button.addEventListener('click', function(e) {
-                                const video = this.parentElement.querySelector('video');
-                                video.muted = false;
-                                video.play().catch(e => console.log('Playback prevented:', e));
-                                video.loop = true;
-                                this.style.display = 'none';
-                            });
-                        });
-                    }
-
-                    function handleVideoVisibility() {
-                        const slideWidth = slides[0].clientWidth + 10;
-                        const containerWidth = track.clientWidth;
-                        const trackPosition = Math.abs(parseInt(track.style.transform?.split('(')[1]) || 0);
-                        
-                        slides.forEach((slide, index) => {
-                            const video = slide.querySelector('video');
-                            if (!video) return;
-                            const slidePosition = index * slideWidth;
-                            const isVisible = slidePosition >= trackPosition && slidePosition < trackPosition + containerWidth;
-                            const playButton = slide.querySelector('.play-button');
-                            
-                            if (isVisible && window.innerWidth >= 769) {
-                                video.loop = true; video.muted = true; video.play().catch(e => console.log('Autoplay prevented:', e));
-                            } else {
-                                video.pause();
-                                if (playButton && video.paused) playButton.style.display = 'flex';
-                                if (window.innerWidth < 769) video.style.backgroundImage = "url('" + video.getAttribute('poster') + "')";
-                            }
-                        });
-                    }
-
-                    function updateSlide() {
-                        const slideWidth = slides[0].clientWidth + 10;
-                        const containerWidth = track.clientWidth;
-                        const totalWidth = slideWidth * slides.length;
-                        const maxOffset = Math.max(0, totalWidth - containerWidth);
-                        let desiredPosition = slideWidth * currentIndex;
-                        desiredPosition = Math.max(0, Math.min(desiredPosition, maxOffset));
-                        track.style.transform = "translateX(-" + desiredPosition + "px)";
-                        setTimeout(handleVideoVisibility, 500);
-                    }
-
-                    function nextSlide() {
-                        const slidesToShow = window.innerWidth < 769 ? 1 : 3;
-                        currentIndex = (currentIndex + slidesToShow >= slides.length) ? 0 : currentIndex + slidesToShow;
-                        updateSlide();
-                    }
-
-                    function prevSlide() {
-                        const slidesToShow = window.innerWidth < 769 ? 1 : 3;
-                        currentIndex = (currentIndex - slidesToShow < 0) ? slides.length - slidesToShow : currentIndex - slidesToShow;
-                        updateSlide();
-                    }
-
-                    function handleResize() {
-                        const slidesToShow = window.innerWidth < 769 ? 1 : 3;
-                        slides.forEach(slide => slide.style.flex = "0 0 calc(" + (100/slidesToShow) + "% - 10px)");
-                        currentIndex = Math.min(currentIndex, slides.length - slidesToShow);
-                        updateSlide();
-                        initVideos(); 
-                    }
-
-                    function initCarousel() {
-                        handleResize(); initVideos(); initVideoButtons();
-                        setTimeout(() => { currentIndex = 0; updateSlide(); handleVideoVisibility(); }, 50);
-                        carousel.querySelectorAll('video').forEach(video => video.loop = true);
-                    }
-
-                    window.addEventListener('resize', handleResize);
-                    nextBtn.addEventListener('click', () => { nextSlide(); resetAutoSlide(); });
-                    prevBtn.addEventListener('click', () => { prevSlide(); resetAutoSlide(); });
-
-                    function resetAutoSlide() {
-                        clearInterval(autoSlideInterval);
-                        autoSlideInterval = setInterval(() => {
-                            let isVideoPlaying = false;
-                            carousel.querySelectorAll('.slide video').forEach(video => { if (!video.paused) isVideoPlaying = true; });
-                            if (!isVideoPlaying) nextSlide();
-                        }, 5000);
-                    }
-
-                    initCarousel(); resetAutoSlide();
-                    carousel.querySelector('.carousel-container').addEventListener('mouseenter', () => clearInterval(autoSlideInterval));
-                    carousel.querySelector('.carousel-container').addEventListener('mouseleave', resetAutoSlide);
-                    document.addEventListener('visibilitychange', () => {
-                        if (document.hidden) {
-                            carousel.querySelectorAll('video').forEach(video => {
-                                video.pause();
-                                if (window.innerWidth < 769) video.style.backgroundImage = "url('" + video.getAttribute('poster') + "')";
-                            });
-                                    } else {
-                                        counter.innerText = (isFloat ? currentCount.toFixed(1) : Math.round(currentCount).toLocaleString()) + suffix;
-                                    }
-                                }, frameRate);
-                            });
-                        });
-                    <\/script>
-                </body>
-                </html>`;
         };
 
         const getChatHTML = () => { return `<!DOCTYPE html><html lang="en"><head><script src="https://cdn.tailwindcss.com"><\/script></head><body class="bg-gray-50 font-sans min-h-screen flex flex-col"><div class="w-full h-64 bg-[url('https://bucket.mlcdn.com/a/3336/3336910/images/b77400b9d29ec1365c1afe7f84ac0ebdf2d4668c.png')] bg-cover bg-center relative shrink-0"><div class="absolute inset-0 bg-slate-800/80 mix-blend-multiply"></div><div class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent"></div><div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 mb-8"><h2 class="text-4xl font-extrabold text-white mb-3">${i18n[currentLang].chat_title}</h2><p class="text-white/80 max-w-2xl text-lg">${i18n[currentLang].chat_sub}</p></div></div><div class="flex-1 px-6 pb-10 flex justify-center relative z-10 -mt-16"><div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-4xl flex flex-col overflow-hidden min-h-[600px]"><script> window.chatpilotIframeConfig = { chatbotId: "b876518dadf641c386b778fd5a6cb927", domain: "https://asistente.chatterbot.support" } <\/script><script src="https://asistente.chatterbot.support/embed.iframe.js" charset="utf-8"><\/script><iframe allow="microphone" src="https://asistente.chatterbot.support/chatbot-iframe/b876518dadf641c386b778fd5a6cb927" id="chatbot-iframe" style="border: none; width: 100%; height: 100%; flex: 1;" class="min-h-[600px]" frameborder="0"></iframe></div></div></body></html>`; };
