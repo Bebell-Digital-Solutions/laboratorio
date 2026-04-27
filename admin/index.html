@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin | Bebell Digital Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://bucket.mlcdn.com/a/3336/3336910/images/b74a51568f9c96c2eba6d4b44cb135a94f573590.png">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .status-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        
+        .drag-handle { cursor: grab; }
+        .drag-handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.4; background-color: #f8fafc; }
+        
+        .fc { --fc-button-bg-color: #8b84f4; --fc-button-border-color: #8b84f4; --fc-button-hover-bg-color: #7a72e0; --fc-button-hover-border-color: #7a72e0; --fc-button-active-bg-color: #6c63d6; font-size: 0.85rem; }
+        .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700 !important; color: #1e293b; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: { primary: '#8b84f4', highlight: '#e07cd0', bg: '#f1f0fb', sidebar: '#29225b' } } } }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg flex h-screen overflow-hidden text-gray-800 relative">
+
+    <!-- LOGIN OVERLAY -->
+    <div id="login-overlay" class="fixed inset-0 z-[999] bg-cover bg-center flex items-center justify-center p-4" style="background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/17b83bfbb8eda81d4cb5eb2ae8dbe506bd649401.png');">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-brand-highlight"></div>
+            <div class="flex items-center justify-center mb-1">
+                <div class="relative w-[150px] h-[150px] cursor-pointer group">
+                    <img src="https://bucket.mlcdn.com/a/3336/3336910/images/f33cef0fa8aab68e4c967bc10f39c9a3717a49cf.png" alt="Logo" class="absolute inset-0 w-full h-full object-contain transition-all duration-700 ease-in-out transform group-hover:scale-110 group-hover:opacity-0">
+                    <img src="https://cdn.shopify.com/s/files/1/0242/0175/6777/files/Tiendas_Digitales_1.gif?v=1777296234" alt="Logo Animated" class="absolute inset-0 w-full h-full object-contain transition-all duration-700 ease-in-out transform opacity-0 group-hover:scale-110 group-hover:opacity-100">
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2 data-i18n" data-en="Bebell Digital Solutions" data-es="Bebell Soluciones Digitales">Bebell Digital Solutions</h2>
+            <p class="text-center text-gray-500 mb-8 text-sm data-i18n" data-en="Restricted Area. Authorized Access Only." data-es="Área Restringida. Solo Acceso Autorizado.">Restricted Area. Authorized Access Only.</p>
+            <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl text-center break-all whitespace-pre-wrap max-h-32 overflow-y-auto overflow-x-hidden"></div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1 data-i18n" data-en="Email" data-es="Correo">Email</label>
+                    <input type="email" id="admin-email" required class="w-full px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-brand-primary outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1 data-i18n" data-en="Password" data-es="Contraseña">Password</label>
+                    <input type="password" id="admin-password" required class="w-full px-4 py-2.5 rounded-xl border focus:ring-2 focus:ring-brand-primary outline-none">
+                </div>
+                <div class="flex items-center mt-2">
+                    <input type="checkbox" id="remember-me" class="mr-2 rounded text-brand-primary focus:ring-brand-primary">
+                    <label for="remember-me" class="text-xs text-gray-500 data-i18n" data-en="Remember me" data-es="Recordarme">Remember me</label>
+                </div>
+                <button type="submit" class="w-full mt-6 bg-brand-primary text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center hover:opacity-90">
+                    <span class="data-i18n" data-en="Authenticate" data-es="Autenticar">Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-brand-sidebar text-white flex flex-col hidden md:flex shrink-0">
+        <div class="flex items-center justify-center p-6 border-b border-white/10 shrink-0 bg-black/20">
+            <img src="https://bucket.mlcdn.com/a/3336/3336910/images/f33cef0fa8aab68e4c967bc10f39c9a3717a49cf.png" alt="Logo" class="w-[150px] h-[150px] object-contain transition-all duration-300 transform hover:scale-105 cursor-pointer">
+        </div>
+        
+        <!-- Global Search Bar -->
+        <div class="px-6 py-4 shrink-0">
+            <div class="relative">
+                <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50"></i>
+                <input type="text" id="global-search" oninput="handleGlobalSearch(this.value)" class="w-full bg-black/20 text-white placeholder-white/50 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brand-highlight transition-all data-i18n" placeholder="Search..." data-en="Search..." data-es="Buscar...">
+            </div>
+        </div>
+
+        <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+            <button onclick="switchTab('overview')" id="nav-overview" class="w-full flex items-center px-6 py-3 bg-white/10 text-white border-l-4 border-brand-highlight">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Overview" data-es="Resumen">Overview</span>
+            </button>
+            <button onclick="switchTab('calendar')" id="nav-calendar" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="calendar" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Calendar" data-es="Calendario">Calendar</span>
+            </button>
+            <button onclick="switchTab('messaging')" id="nav-messaging" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="send" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Messaging Hub" data-es="Mensajes">Messaging Hub</span>
+            </button>
+            <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="users" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Users" data-es="Usuarios">Users</span>
+            </button>
+            <button onclick="switchTab('organizations')" id="nav-organizations" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="building" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Organizations" data-es="Organizaciones">Organizations</span>
+            </button>
+            <button onclick="switchTab('dashboards')" id="nav-dashboards" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="monitor-smartphone" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Dashboards" data-es="Tableros">Dashboards</span>
+            </button>
+            <button onclick="switchTab('team')" id="nav-team" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="shield-check" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Admin Access" data-es="Accesos">Admin Access</span>
+            </button>
+            <button onclick="switchTab('logs')" id="nav-logs" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="activity" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Logs" data-es="Registros">Logs</span>
+            </button>
+            
+            <div class="px-6 py-4 text-[10px] font-bold text-white/30 uppercase tracking-widest data-i18n" data-en="Resources" data-es="Recursos">Resources</div>
+            <button onclick="openResource('Marketing Tower', '/crm')" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="filter" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Sales Funnel" data-es="Embudo de Ventas">Sales Funnel</span>
+            </button>
+            <button onclick="openResource('Brand Auditor', '/brand-auditor')" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="scan-search" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Brand Auditor" data-es="Auditor de Marca">Brand Auditor</span>
+            </button>
+            <button onclick="openResource('Digital Business', 'https://elnegocio.digital')" class="w-full flex items-center px-6 py-3 hover:bg-white/5 text-white/90 border-l-4 border-transparent transition-colors">
+                <i data-lucide="globe" class="w-5 h-5 mr-3"></i> <span class="data-i18n" data-en="Digital Business" data-es="Negocio Digital">Digital Business</span>
+            </button>
+        </nav>
+        
+        <!-- Sidebar Footer -->
+        <div class="relative p-4 border-t border-white/10 bg-black/10">
+            <div onclick="toggleUserModal(event)" class="flex items-center space-x-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer relative group">
+                <div class="w-10 h-10 rounded-full border-2 border-brand-highlight overflow-hidden bg-white/10 flex-shrink-0">
+                    <img id="user-avatar-display" src="" class="w-full h-full object-cover">
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <p id="user-name-display" class="text-sm font-bold text-white truncate">Admin</p>
+                    <p id="user-role-display" class="text-[10px] text-white/50 uppercase font-bold tracking-widest">Role</p>
+                </div>
+                <i data-lucide="chevron-up" class="w-4 h-4 text-white/20 group-hover:text-white transition-colors"></i>
+
+                <!-- User Context Menu -->
+                <div id="user-context-modal" class="hidden absolute bottom-full left-0 w-full mb-2 bg-white rounded-2xl shadow-2xl overflow-hidden border border-gray-100 z-50">
+                    <div class="p-3 bg-gray-50 border-b">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase data-i18n" data-en="Account" data-es="Cuenta">Account</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); document.getElementById('user-context-modal').classList.add('hidden'); openProfileModal();" class="w-full flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-brand-bg transition-colors text-left">
+                        <i data-lucide="user" class="w-4 h-4 mr-3 text-brand-primary"></i> <span class="data-i18n" data-en="Profile Settings" data-es="Perfil">Profile Settings</span>
+                    </button>
+                    <button onclick="event.stopPropagation(); logoutAdmin();" class="w-full flex items-center px-4 py-3 text-sm text-rose-500 hover:bg-rose-50 transition-colors border-t text-left">
+                        <i data-lucide="log-out" class="w-4 h-4 mr-3"></i> <span class="data-i18n" data-en="Logout" data-es="Salir">Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+        <header class="h-20 bg-white border-b flex items-center justify-between px-8 shrink-0">
+            <h2 id="header-title" class="text-2xl font-bold text-gray-800 data-i18n" data-en="Overview" data-es="Resumen">Overview</h2>
+            <div class="flex items-center space-x-3">
+                <!-- Top Right Real-Time System Badge -->
+                <div id="system-status-container" class="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full transition-colors w-max">
+                    <div id="system-status-dot" class="w-2 h-2 rounded-full bg-gray-400 status-pulse"></div>
+                    <span id="system-status-label" class="text-[10px] font-bold uppercase tracking-tight text-gray-600 data-i18n" data-en="Connecting..." data-es="Conectando...">Connecting...</span>
+                </div>
+
+                <!-- Translation Button - Icon Only -->
+                <button onclick="toggleLanguage()" class="p-2 bg-gray-100 text-gray-700 rounded-lg border hover:bg-gray-200 transition-colors">
+                    <i data-lucide="languages" class="w-5 h-5 text-brand-primary"></i>
+                </button>
+                <button onclick="openComposeModal()" class="px-4 py-2 bg-brand-primary text-white rounded-lg text-sm font-bold shadow-sm hover:opacity-90 transition-opacity data-i18n" data-en="Send Message" data-es="Enviar Mensaje">Send Message</button>
+                <button onclick="fetchData()" class="p-2 bg-brand-primary/10 text-brand-primary rounded-lg border border-brand-primary/20 hover:bg-brand-primary/20 transition-colors" id="refresh-btn">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </header>
+
+        <div id="main-loader" class="absolute inset-0 top-20 bg-brand-bg/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center hidden">
+            <i data-lucide="loader-2" class="w-10 h-10 text-brand-highlight animate-spin mb-2"></i>
+            <p class="text-gray-600 font-medium data-i18n" data-en="Syncing Data..." data-es="Sincronizando...">Syncing Data...</p>
+        </div>
+
+        <div class="flex-1 overflow-auto p-8" id="content-area">
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-content active space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl p-6 border shadow-sm"><p class="text-xs text-gray-400 font-bold uppercase data-i18n" data-en="Dashboards" data-es="Tableros">Dashboards</p><h3 id="kpi-dashboards" class="text-3xl font-bold">0</h3></div>
+                    <div class="bg-white rounded-2xl p-6 border shadow-sm"><p class="text-xs text-gray-400 font-bold uppercase data-i18n" data-en="Total Users" data-es="Usuarios">Total Users</p><h3 id="kpi-users" class="text-3xl font-bold">0</h3></div>
+                    <div class="bg-white rounded-2xl p-6 border shadow-sm"><p class="text-xs text-gray-400 font-bold uppercase data-i18n" data-en="Logs" data-es="Logs">Logs</p><h3 id="kpi-logs" class="text-3xl font-bold">0</h3></div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl border shadow-sm p-6"><h3 class="font-bold mb-4 data-i18n" data-en="Activity Trend" data-es="Tendencia">Activity Trend</h3><div class="h-64 w-full"><canvas id="activityChart"></canvas></div></div>
+                    
+                    <!-- DYNAMIC TASKS CARD -->
+                    <div class="bg-white rounded-2xl border shadow-sm p-6 flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold data-i18n" data-en="Administrative Tasks" data-es="Tareas Administrativas">Administrative Tasks</h3>
+                            <button onclick="openTaskModal()" class="px-3 py-1.5 bg-brand-bg text-brand-primary font-bold text-xs rounded-lg hover:bg-brand-primary/10 transition-colors data-i18n" data-en="Add Task" data-es="Añadir Tarea">Add Task</button>
+                        </div>
+                        <div id="task-list" class="flex-1 space-y-3 overflow-y-auto max-h-64 pr-2"></div>
+                    </div>
+                </div>
+
+                <!-- MARKETING TOWER METRICS -->
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold data-i18n" data-en="Marketing Tower Metrics" data-es="Métricas Torre de Marketing">Marketing Tower Metrics</h3>
+                        <button onclick="openResource('Marketing Tower', '/crm')" class="text-xs text-brand-primary font-bold hover:underline data-i18n" data-en="View Funnel" data-es="Ver Embudo">View Funnel</button>
+                    </div>
+                    <div id="funnel-metrics-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4"></div>
+                </div>
+
+                <!-- SYSTEM TIMELINE -->
+                <div class="bg-white rounded-2xl border shadow-sm p-6">
+                    <h3 class="font-bold mb-4 data-i18n" data-en="System Activity Timeline" data-es="Línea de Tiempo del Sistema">System Activity Timeline</h3>
+                    <div id="timeline-container" class="relative border-l-2 border-brand-primary/20 ml-3 space-y-6 max-h-96 overflow-y-auto pr-4"></div>
+                </div>
+            </div>
+
+            <!-- CALENDAR TAB -->
+            <div id="tab-calendar" class="tab-content h-full">
+                <div class="bg-white rounded-2xl border shadow-sm p-6 h-full flex flex-col">
+                    <div id="calendar-view" class="flex-1 min-h-[500px]"></div>
+                </div>
+            </div>
+
+            <!-- MESSAGING HUB -->
+            <div id="tab-messaging" class="tab-content space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b font-bold data-i18n" data-en="Saved Templates" data-es="Plantillas">Saved Templates</div>
+                        <ul id="campaign-list" class="divide-y max-h-[500px] overflow-y-auto"></ul>
+                    </div>
+                    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                        <div class="p-4 bg-gray-50 border-b font-bold data-i18n" data-en="Dispatch Queue" data-es="Cola de Envío">Dispatch Queue</div>
+                        <ul id="queue-list" class="divide-y max-h-[500px] overflow-y-auto"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORGANIZATIONS TAB -->
+            <div id="tab-organizations" class="tab-content space-y-4">
+                <div class="flex justify-between items-center">
+                    <p class="text-gray-500 data-i18n" data-en="Manage Clients & Brands" data-es="Gestionar Clientes y Marcas">Manage Clients & Brands</p>
+                    <button onclick="openOrgModal()" class="bg-brand-primary text-white px-4 py-2 rounded-lg font-bold shadow-sm data-i18n" data-en="New Organization" data-es="Nueva Organización">New Organization</button>
+                </div>
+                <div class="bg-white border rounded-2xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-xs font-bold uppercase">
+                            <tr>
+                                <th class="p-4 data-i18n" data-en="Business Name" data-es="Empresa">Business Name</th>
+                                <th class="p-4 data-i18n" data-en="RNC" data-es="RNC">RNC</th>
+                                <th class="p-4 data-i18n" data-en="Contact" data-es="Contacto">Contact</th>
+                                <th class="p-4 text-right data-i18n" data-en="Action" data-es="Acción">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orgs-tbody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="tab-users" class="tab-content space-y-4">
+                <div class="bg-white border rounded-2xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-xs font-bold uppercase">
+                            <tr>
+                                <th class="p-4 data-i18n" data-en="User" data-es="Usuario">User</th>
+                                <th class="p-4 data-i18n" data-en="Dashboard" data-es="Tablero">Dashboard</th>
+                                <th class="p-4 data-i18n" data-en="Status" data-es="Estado">Status</th>
+                                <th class="p-4 text-right data-i18n" data-en="Action" data-es="Acción">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DASHBOARDS TAB -->
+            <div id="tab-dashboards" class="tab-content space-y-4">
+                <div class="bg-white border rounded-2xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-xs font-bold uppercase">
+                            <tr>
+                                <th class="p-4 data-i18n" data-en="Dashboard" data-es="Tablero">Dashboard</th>
+                                <th class="p-4 data-i18n" data-en="Links & Setup" data-es="Enlaces y Ajustes">Links & Setup</th>
+                                <th class="p-4 text-right data-i18n" data-en="Action" data-es="Acción">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dashboards-tbody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TEAM TAB -->
+            <div id="tab-team" class="tab-content space-y-4">
+                <div class="flex justify-between items-center"><p class="text-gray-500 data-i18n" data-en="Dashboard Admins" data-es="Administradores">Dashboard Admins</p><button onclick="openAddAdminModal()" class="bg-brand-primary text-white px-4 py-2 rounded-lg font-bold shadow-sm data-i18n" data-en="Add Admin" data-es="Añadir Admin">Add Admin</button></div>
+                <div class="bg-white border rounded-2xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-xs font-bold uppercase">
+                            <tr>
+                                <th class="p-4">Email</th>
+                                <th class="p-4 data-i18n" data-en="Role" data-es="Rol">Role</th>
+                                <th class="p-4 data-i18n" data-en="Last Login" data-es="Acceso">Last Login</th>
+                                <th class="p-4 text-right data-i18n" data-en="Action" data-es="Acción">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="team-tbody" class="divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- LOGS TAB -->
+            <div id="tab-logs" class="tab-content bg-white border rounded-2xl overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 text-xs font-bold uppercase">
+                        <tr>
+                            <th class="p-4 data-i18n" data-en="Timestamp" data-es="Fecha">Timestamp</th>
+                            <th class="p-4 data-i18n" data-en="Activity" data-es="Actividad">Activity</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody" class="divide-y"></tbody>
+                </table>
+            </div>
+
+            <!-- IFRAME RESOURCE -->
+            <div id="tab-resource-viewer" class="tab-content h-full"><iframe id="resource-iframe" src="" class="w-full h-full border-0 rounded-2xl bg-white shadow-lg"></iframe></div>
+        </div>
+    </main>
+
+    <!-- ALL MODALS CENTRALIZED -->
+    <!-- 1. ORG MODAL (Create & Edit) -->
+    <div id="org-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden relative">
+            <button onclick="closeOrgModal()" class="absolute top-4 right-4 z-20 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="overflow-y-auto flex-1 pb-6">
+                <!-- Visual Banner & Logo Header -->
+                <div class="relative w-full h-48 bg-slate-100 shrink-0 group cursor-pointer" onclick="document.getElementById('org-banner-file').click()">
+                    <img id="org-banner-preview" src="" class="w-full h-full object-cover hidden">
+                    <div id="org-banner-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 group-hover:bg-slate-200 transition-colors">
+                        <i data-lucide="image" class="w-8 h-8 mb-2"></i><span class="text-[10px] font-bold uppercase tracking-widest data-i18n" data-en="Upload Portal Banner" data-es="Subir Banner del Portal">Upload Portal Banner</span>
+                    </div>
+                    <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="camera" class="w-6 h-6 text-white"></i></div>
+                    <input type="file" id="org-banner-file" accept="image/*" class="hidden" onchange="handleBannerSelect(event)">
+                    <input type="hidden" id="org-banner-b64">
+                    
+                    <div class="absolute -bottom-10 left-8 w-24 h-24 bg-white rounded-full p-1 shadow-lg z-10 cursor-pointer group/logo" onclick="event.stopPropagation(); document.getElementById('org-logo-file').click()">
+                        <div class="w-full h-full rounded-full bg-slate-50 overflow-hidden relative flex items-center justify-center border border-slate-100">
+                            <img id="org-logo-preview" src="" class="w-full h-full object-cover hidden bg-white">
+                            <i data-lucide="building" class="w-8 h-8 text-slate-300" id="org-logo-placeholder"></i>
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/logo:opacity-100 transition-opacity"><i data-lucide="camera" class="w-5 h-5 text-white"></i></div>
+                        </div>
+                        <input type="file" id="org-logo-file" accept="image/*" class="hidden" onchange="handleOrgLogoSelect(event)">
+                        <input type="hidden" id="org-logo-b64">
+                    </div>
+                </div>
+
+                <div class="px-8 pt-4 flex justify-between items-end">
+                    <h3 id="modal-org-title" class="font-bold text-lg text-slate-800 data-i18n" data-en="Create Organization & Portal" data-es="Crear Organización y Portal">Create Organization & Portal</h3>
+                    <div class="flex flex-wrap justify-end gap-2" id="org-tags-container">
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Oficina Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Tienda Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Consultorio Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Menú Digital</button>
+                    </div>
+                </div>
+
+                <div class="px-8 pt-6 space-y-5">
+                    <input type="hidden" id="org-uid">
+                    <div class="grid grid-cols-2 gap-5">
+                        <div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Business Name" data-es="Nombre Empresa">Business Name</label><input type="text" id="org-name" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div class="col-span-2 md:col-span-1"><label class="block text-xs font-bold text-gray-500 uppercase mb-1 flex justify-between"><span class="data-i18n" data-en="Logo URL" data-es="URL del Logo">Logo URL</span><span class="text-[9px] text-brand-primary lowercase bg-brand-primary/10 px-1.5 rounded">(or upload)</span></label><input type="url" id="org-logo" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary text-sm" placeholder="https://" oninput="document.getElementById('org-logo-preview').src = this.value; document.getElementById('org-logo-preview').classList.remove('hidden'); document.getElementById('org-logo-placeholder').classList.add('hidden');"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="RNC" data-es="RNC">RNC</label><input type="text" id="org-rnc" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Phone" data-es="Teléfono">Phone</label><input type="text" id="org-phone" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Address" data-es="Dirección">Address</label><input type="text" id="org-address" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Website" data-es="Sitio Web">Website</label><input type="url" id="org-website" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Primary Email" data-es="Correo">Primary Email</label><input type="email" id="org-email" class="w-full p-2.5 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    </div>
+                    <h4 class="font-bold text-sm text-gray-800 pt-4 border-t data-i18n" data-en="Dashboard Theme" data-es="Tema Tablero">Dashboard Theme</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Primary Color</label><input type="color" id="org-color" value="#8b84f4" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sidebar Color</label><input type="color" id="org-sidebar" value="#29225b" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Highlight Color</label><input type="color" id="org-highlight" value="#e07cd0" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                    </div>
+                    <h4 class="font-bold text-sm text-gray-800 pt-4 border-t data-i18n" data-en="Performance Metrics" data-es="Métricas de Rendimiento">Performance Metrics</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Brand Identity %" data-es="Identidad Marca %">Brand Identity %</label><input type="number" id="org-stat1" value="92" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Digital Presence %" data-es="Presencia Digital %">Digital Presence %</label><input type="number" id="org-stat2" value="85" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                        <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Conversion %" data-es="Conversión %">Conversion %</label><input type="number" id="org-stat3" value="78" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end space-x-3 shrink-0">
+                <button onclick="closeOrgModal()" class="text-sm font-bold text-gray-500 data-i18n" data-en="Cancel" data-es="Cancelar">Cancel</button>
+                <button onclick="saveOrganization()" id="btn-save-org" class="px-6 py-2.5 bg-brand-primary text-white font-bold rounded-xl shadow-md hover:opacity-90 transition-opacity data-i18n" data-en="Save Organization" data-es="Guardar Organización">Save Organization</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. EDIT DASHBOARD MODAL (Updated with Portal/Tunnel fields) -->
+    <div id="edit-dash-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden relative">
+            <div class="p-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                <h3 class="font-bold data-i18n" data-en="Edit Dashboard Settings" data-es="Editar Ajustes del Tablero">Edit Dashboard Settings</h3>
+                <button onclick="closeEditDashboardModal()"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button>
+            </div>
+            <div class="p-6 space-y-6 overflow-y-auto flex-1">
+                <input type="hidden" id="edit-dash-uid">
+                <div class="flex justify-end">
+                    <div class="flex flex-wrap justify-end gap-2" id="edit-dash-tags-container">
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Oficina Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Tienda Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Consultorio Digital</button>
+                        <button type="button" onclick="toggleTag(this)" class="tag-btn px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border border-gray-200 text-gray-500 hover:border-brand-primary hover:text-brand-primary transition-colors">Menú Digital</button>
+                    </div>
+                </div>
+                
+                <h4 class="font-bold text-sm text-gray-800 border-b pb-2 data-i18n" data-en="Appearance" data-es="Apariencia">Appearance</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Logo URL</label><input type="text" id="edit-dash-logo" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    <div class="col-span-2"><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Banner URL</label><input type="text" id="edit-dash-banner" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Primary Color</label><input type="color" id="edit-dash-color" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sidebar Color</label><input type="color" id="edit-dash-sidebar" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Highlight Color</label><input type="color" id="edit-dash-highlight" class="w-full h-10 rounded-xl border p-1 cursor-pointer"></div>
+                </div>
+
+                <!-- NEW: PORTAL / TUNNEL SETUP SECTION -->
+                <h4 class="font-bold text-sm text-gray-800 pt-4 border-t data-i18n" data-en="Portal / Tunnel Setup" data-es="Configuración Portal / Túnel">Portal / Tunnel Setup</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Tunnel Title" data-es="Título del Túnel">Tunnel Title</label>
+                        <input type="text" id="edit-dash-tunnel-title" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Portal Title...">
+                    </div>
+                    <div class="col-span-2 md:col-span-1">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Tunnel Logo URL" data-es="URL Logo Túnel">Tunnel Logo URL</label>
+                        <input type="url" id="edit-dash-tunnel-logo" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="https://...">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Tunnel Description" data-es="Descripción del Túnel">Tunnel Description</label>
+                        <textarea id="edit-dash-tunnel-desc" rows="2" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Short description for portal..."></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Tunnel Bg Color" data-es="Color Fondo Túnel">Tunnel Bg Color</label>
+                        <input type="color" id="edit-dash-tunnel-bg" class="w-full h-10 rounded-xl border p-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Tunnel Line Color" data-es="Color Línea Túnel">Tunnel Line Color</label>
+                        <input type="color" id="edit-dash-tunnel-line" class="w-full h-10 rounded-xl border p-1 cursor-pointer">
+                    </div>
+                </div>
+                
+                <h4 class="font-bold text-sm text-gray-800 pt-4 border-t data-i18n" data-en="Performance Metrics" data-es="Métricas de Rendimiento">Performance Metrics</h4>
+                <div class="grid grid-cols-3 gap-4">
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Brand Identity %" data-es="Identidad Marca %">Brand Identity %</label><input type="number" id="edit-dash-stat1" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Digital Presence %" data-es="Presencia Digital %">Digital Presence %</label><input type="number" id="edit-dash-stat2" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                    <div><label class="block text-[10px] font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Conversion %" data-es="Conversión %">Conversion %</label><input type="number" id="edit-dash-stat3" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                </div>
+                
+                <h4 class="font-bold text-sm text-gray-800 border-b pb-2 mt-6 flex justify-between items-center"><span class="data-i18n" data-en="Custom Buttons" data-es="Botones">Custom Buttons</span><button onclick="addDashboardButtonField()" class="text-xs bg-brand-primary/10 text-brand-primary px-2 py-1 rounded hover:bg-brand-primary/20 transition-colors">+ Add Link</button></h4>
+                <p class="text-xs text-gray-400 mb-2">Drag and drop to reorder the buttons in the portal sidebar.</p>
+                <div id="edit-dash-buttons-container" class="space-y-2"></div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end space-x-3 shrink-0">
+                <button onclick="closeEditDashboardModal()" class="text-sm font-bold text-gray-500 data-i18n" data-en="Cancel" data-es="Cancelar">Cancel</button>
+                <button onclick="saveDashboardEdit()" id="btn-save-dash" class="px-6 py-2.5 bg-brand-primary text-white font-bold rounded-xl shadow-md data-i18n" data-en="Save Dashboard" data-es="Guardar Tablero">Save Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. TASK MODAL -->
+    <div id="task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="p-6 bg-gray-50 border-b flex justify-between items-center"><h3 class="font-bold data-i18n" data-en="Task Details" data-es="Tarea">Task Details</h3><button onclick="closeTaskModal()"><i data-lucide="x" class="w-5 h-5"></i></button></div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="task-edit-id">
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Task Content" data-es="Contenido">Task Content</label><textarea id="task-input" class="w-full p-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" rows="3" placeholder="Task content..."></textarea></div>
+                <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 data-i18n" data-en="Due Date (Optional)" data-es="Fecha (Opcional)">Due Date</label><input type="date" id="task-date" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary text-sm text-gray-600"></div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end space-x-2"><button onclick="closeTaskModal()" class="text-sm font-bold text-gray-400 data-i18n" data-en="Cancel" data-es="Cancelar">Cancel</button><button onclick="saveTask()" class="px-6 py-2 bg-brand-primary text-white font-bold rounded-xl shadow-md data-i18n" data-en="Save Task" data-es="Guardar">Save Task</button></div>
+        </div>
+    </div>
+
+    <!-- 4. PROFILE MODAL -->
+    <div id="profile-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden relative">
+            <div class="p-6 bg-gray-50 border-b flex justify-between items-center"><h3 class="font-bold data-i18n" data-en="Profile Settings" data-es="Perfil">Profile Settings</h3><button onclick="closeProfileModal()"><i data-lucide="x" class="w-5 h-5 text-gray-400"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div class="flex justify-center mb-2"><div class="relative cursor-pointer group" onclick="document.getElementById('prof-avatar-file').click()"><img id="profile-preview" src="" class="w-24 h-24 rounded-full border-4 border-brand-bg object-cover transition-opacity group-hover:opacity-80"><div class="absolute bottom-0 right-0 p-2 bg-brand-primary text-white rounded-full shadow-lg transition-transform group-hover:scale-110"><i data-lucide="camera" class="w-4 h-4"></i></div></div></div>
+                <input type="file" id="prof-avatar-file" accept="image/*" class="hidden" onchange="handleAvatarSelect(event)"><input type="hidden" id="prof-avatar-b64">
+                <div><label class="block text-xs font-bold uppercase text-gray-400 mb-1">Username</label><input type="text" id="prof-username" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"></div>
+                <div><label class="block text-xs font-bold uppercase text-gray-400 mb-1">Role</label><input type="text" id="prof-role" readonly class="w-full p-2 border rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed"></div>
+                <div><label class="block text-xs font-bold uppercase text-gray-400 mb-1">New Password</label><input type="password" id="prof-password" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="••••••••"></div>
+                <div><label class="block text-xs font-bold uppercase text-gray-400 mb-1">Language</label><select id="prof-lang" class="w-full p-2 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-brand-primary"><option value="en">English</option><option value="es">Español</option></select></div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end space-x-3"><button onclick="closeProfileModal()" class="text-sm font-bold text-gray-500 data-i18n" data-en="Cancel" data-es="Cancelar">Cancel</button><button id="btn-save-profile" onclick="saveProfile()" class="px-6 py-2 bg-brand-primary text-white font-bold rounded-xl shadow-md data-i18n" data-en="Save Changes" data-es="Guardar">Save Changes</button></div>
+        </div>
+    </div>
+
+    <!-- 5. COMPOSE MODAL -->
+    <div id="compose-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-8 py-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-bold data-i18n" data-en="Messaging Hub" data-es="Mensajería">Messaging Hub</h3>
+                <button onclick="closeComposeModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-1 flex overflow-hidden">
+                <div class="w-1/2 p-6 border-r overflow-y-auto space-y-4">
+                    <select id="msg-type" onchange="toggleSubject()" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary"><option value="email">Email</option><option value="whatsapp">WhatsApp</option></select>
+                    <div class="relative"><input type="text" id="msg-recipient" list="recipient-list" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Recipient (Email or Phone)"><datalist id="recipient-list"></datalist></div>
+                    <div id="subject-box"><input type="text" id="msg-subject" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Subject"></div>
+                    <div id="wa-attachment-box" class="hidden">
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-1 data-i18n" data-en="Media Attachment" data-es="Adjunto">Media Attachment</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="text" id="msg-wa-media" class="flex-1 p-2 border rounded-xl outline-none text-sm focus:ring-2 focus:ring-brand-primary" placeholder="Image URL..." oninput="updateLivePreview()">
+                            <button type="button" onclick="document.getElementById('msg-wa-file').click()" class="p-2 bg-gray-100 hover:bg-gray-200 border rounded-xl transition-colors"><i data-lucide="upload" class="w-5 h-5 text-gray-600"></i></button>
+                            <input type="file" id="msg-wa-file" accept="image/*" class="hidden" onchange="handleWaMediaSelect(event)"><input type="hidden" id="msg-wa-media-b64">
+                        </div>
+                        <div class="mt-2 relative hidden inline-block" id="msg-wa-preview-container"><img id="msg-wa-preview" src="" class="w-32 h-32 object-cover rounded-xl border border-gray-200"><button type="button" onclick="clearWaMedia()" class="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"><i data-lucide="x" class="w-3 h-3"></i></button></div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-end mb-1"><label id="msg-body-label" class="block text-xs font-bold text-gray-400 uppercase">Body</label><div id="wa-toolbar" class="hidden flex space-x-1"><button type="button" onclick="insertWaFormat('*')" class="p-1 hover:bg-gray-200 rounded font-bold">B</button><button type="button" onclick="insertWaFormat('_')" class="p-1 hover:bg-gray-200 rounded italic">I</button><button type="button" onclick="insertWaFormat('~')" class="p-1 hover:bg-gray-200 rounded line-through">S</button></div></div>
+                        <textarea id="msg-body" oninput="updateLivePreview()" class="w-full h-48 p-2 font-mono text-sm border rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-brand-primary" placeholder="Content..."></textarea>
+                    </div>
+                    <input type="datetime-local" id="msg-schedule" class="w-full p-2 border rounded-xl outline-none focus:ring-2 focus:ring-brand-primary">
+                </div>
+                <div class="w-1/2 p-6 bg-gray-100 flex flex-col"><div class="flex-1 bg-white rounded-2xl border overflow-hidden"><iframe id="msg-live-preview" class="w-full h-full border-0"></iframe></div></div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-between"><button onclick="openCampaignSave()" class="text-brand-primary font-bold hover:underline data-i18n" data-en="Save Template" data-es="Guardar Plantilla">Save Template</button><button onclick="sendDirectMessage()" id="btn-send-msg" class="px-8 py-2 bg-brand-primary text-white font-bold rounded-xl shadow-lg data-i18n" data-en="Send Now" data-es="Enviar">Send Now</button></div>
+        </div>
+    </div>
+
+    <!-- 6. ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[80] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div class="p-6 border-b bg-gray-50 font-bold data-i18n" data-en="New Admin Access" data-es="Nuevo Acceso">New Admin Access</div>
+            <div class="p-6 space-y-4">
+                <div><label class="block text-xs font-bold mb-1 data-i18n" data-en="Email" data-es="Correo">Email</label><input type="email" id="new-admin-email" class="w-full p-2 border rounded-xl"></div>
+                <div><label class="block text-xs font-bold mb-1 data-i18n" data-en="Role" data-es="Rol">Role</label>
+                    <select id="new-admin-role" class="w-full p-2 border rounded-xl bg-white outline-none focus:ring-2 focus:ring-brand-primary"><option value="Master Admin">Master Admin</option><option value="Editor">Editor</option><option value="Viewer">Viewer</option></select>
+                </div>
+                <div><label class="block text-xs font-bold mb-1 data-i18n" data-en="Password" data-es="Contraseña">Password</label><input type="password" id="new-admin-pass" class="w-full p-2 border rounded-xl"></div>
+            </div>
+            <div class="p-6 bg-gray-50 border-t flex justify-end space-x-2"><button onclick="closeAddAdminModal()" class="text-sm font-bold text-gray-400 data-i18n" data-en="Cancel" data-es="Cancelar">Cancel</button><button onclick="saveNewAdmin()" class="px-6 py-2 bg-brand-primary text-white font-bold rounded-lg shadow-md data-i18n" data-en="Grant" data-es="Otorgar">Grant</button></div>
+        </div>
+    </div>
+
+    <!-- SINGLE UNIFIED SCRIPT BLOCK -->
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwRX3698t_naJ2Ff740DQxthe7L6-1Quo5X6vmq5HVadTJP1rAEsdL5NwDY7rtijHZjJw/exec";
+        let chartInstance = null;
+        let adminData = null;
+        let currentLang = localStorage.getItem('bebell_lang') || 'en';
+        let tasks = [];
+        let sortableButtons = null; 
+        let calendarInstance = null; 
+
+        lucide.createIcons();
+
+        // ------------------ GLOBAL SEARCH ------------------
+        function handleGlobalSearch(query) {
+            const q = (query || '').toLowerCase().trim();
+            const activeTab = document.querySelector('.tab-content.active');
+            if(!activeTab) return;
+
+            const searchSelectors = [
+                'tbody tr',                          // Data Tables
+                'ul#campaign-list li',               // Campaigns
+                'ul#queue-list li',                  // Dispatch Queue
+                '#task-list > div',                  // Tasks
+                '#timeline-container > div.relative' // Timeline Events
+            ];
+
+            searchSelectors.forEach(selector => {
+                activeTab.querySelectorAll(selector).forEach(el => {
+                    const text = el.textContent || el.innerText || '';
+                    el.style.display = text.toLowerCase().includes(q) ? '' : 'none';
+                });
+            });
+        }
+
+        // ------------------ SYNC ENGINE & STATUS ------------------
+        function setSystemStatus(status) {
+            const dot = document.getElementById('system-status-dot');
+            const label = document.getElementById('system-status-label');
+            const cont = document.getElementById('system-status-container');
+            if(!dot || !label) return;
+            dot.className = 'w-2 h-2 rounded-full status-pulse';
+            if (status === 'operational') {
+                dot.classList.add('bg-emerald-400');
+                label.innerText = currentLang === 'en' ? 'Operational' : 'Operativo';
+                label.className = 'text-[10px] font-bold uppercase tracking-tight text-emerald-700';
+                cont.className = 'flex items-center space-x-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full transition-colors w-max';
+            } else if (status === 'syncing') {
+                dot.classList.add('bg-amber-400');
+                label.innerText = currentLang === 'en' ? 'Syncing...' : 'Sincronizando...';
+                label.className = 'text-[10px] font-bold uppercase tracking-tight text-amber-700';
+                cont.className = 'flex items-center space-x-2 px-3 py-1.5 bg-amber-50 border border-amber-100 rounded-full transition-colors w-max';
+            } else {
+                dot.classList.add('bg-rose-500');
+                label.innerText = currentLang === 'en' ? 'Systems Down' : 'Sistemas Caídos';
+                label.className = 'text-[10px] font-bold uppercase tracking-tight text-rose-600';
+                cont.className = 'flex items-center space-x-2 px-3 py-1.5 bg-rose-50 border border-rose-100 rounded-full transition-colors w-max';
+            }
+        }
+
+        async function apiPost(action, payload = {}) {
+            try {
+                const response = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+                const result = await response.json();
+                return result;
+            } catch (e) { setSystemStatus('down'); throw e; }
+        }
+
+        async function fetchData() {
+            setSystemStatus('syncing');
+            const loader = document.getElementById('main-loader');
+            const icon = document.getElementById('refresh-btn')?.querySelector('i');
+            
+            loader.classList.remove('hidden');
+            if(icon) icon.classList.add('animate-spin');
+
+            try {
+                const result = await apiPost('getAdminData');
+                if(result.success) {
+                    adminData = result.data;
+                    tasks = (result.data.tasks || []).slice(1).map(r => ({ id: r[0], text: r[1], completed: r[2], date: r[3] }));
+                    renderData(result.data);
+                    setSystemStatus('operational');
+                } else { 
+                    throw new Error("Failed to pull data"); 
+                }
+            } catch (e) { 
+                console.error("Backend unavailable or data fetch failed.", e);
+                setSystemStatus('down');
+            } finally {
+                loader.classList.add('hidden');
+                if(icon) icon.classList.remove('animate-spin');
+            }
+        }
+
+        function toggleLanguage() { currentLang = currentLang === 'en' ? 'es' : 'en'; localStorage.setItem('bebell_lang', currentLang); applyLanguage(); }
+
+        function applyLanguage() {
+            document.querySelectorAll('.data-i18n').forEach(el => {
+                const text = el.getAttribute(`data-${currentLang}`);
+                if (text) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = text;
+                    else el.innerText = text;
+                }
+            });
+            if(adminData && document.getElementById('system-status-dot').classList.contains('bg-emerald-400')) {
+                setSystemStatus('operational');
+            } else if (document.getElementById('system-status-dot').classList.contains('bg-amber-400')) {
+                setSystemStatus('syncing');
+            } else {
+                setSystemStatus('down');
+            }
+            
+            const bodyLabel = document.getElementById('msg-body-label');
+            if(bodyLabel) {
+                if(document.getElementById('msg-type').value === 'whatsapp') {
+                    bodyLabel.innerText = currentLang === 'en' ? 'WhatsApp Text' : 'Texto WhatsApp';
+                } else {
+                    bodyLabel.innerText = currentLang === 'en' ? 'Body (HTML Allowed)' : 'Cuerpo (Permite HTML)';
+                }
+            }
+        }
+
+        // ------------------ RECIPIENT LOGIC ------------------
+        function populateRecipientList() {
+            if(!adminData) return;
+            const datalist = document.getElementById('recipient-list');
+            const type = document.getElementById('msg-type').value;
+            datalist.innerHTML = '';
+            
+            const added = new Set();
+            const addOption = (val, label) => {
+                if(!val || added.has(val)) return;
+                added.add(val);
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.innerText = label;
+                datalist.appendChild(opt);
+            };
+
+            if(adminData.orgs && adminData.orgs.length > 1) {
+                adminData.orgs.slice(1).forEach(r => {
+                    const orgName = r[1];
+                    const orgEmail = r[8];
+                    const orgPhone = r[7];
+                    if(type === 'email') addOption(orgEmail, orgName + ' (Org)');
+                    else addOption(orgPhone, orgName + ' (Org)');
+                });
+            }
+
+            if(adminData.users && adminData.users.length > 1) {
+                adminData.users.slice(1).forEach(r => {
+                    const fullName = r[2] + ' ' + r[3];
+                    const email = r[4];
+                    if(type === 'email') addOption(email, fullName);
+                });
+            }
+        }
+
+        // ------------------ TASK ACTIONS ------------------
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = tasks.map(t => {
+                const parts = t.text.split('|||');
+                const textStr = parts[0];
+                const dateStr = parts[1] ? `<span class="flex items-center text-[9px] mt-1 text-gray-400 font-bold"><i data-lucide="calendar" class="w-3 h-3 mr-1"></i> ${parts[1]}</span>` : '';
+                return `
+                <div class="flex items-center group p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-white hover:shadow-sm">
+                    <div onclick="toggleTask('${t.id}')" class="w-5 h-5 rounded-full border-2 cursor-pointer mr-3 flex items-center justify-center shrink-0 ${t.completed ? 'border-emerald-500 bg-emerald-50' : 'border-gray-300'}">${t.completed ? '<i data-lucide="check" class="w-3 h-3 text-emerald-500"></i>' : ''}</div>
+                    <div class="flex-1 ${t.completed ? 'text-gray-400 line-through' : 'text-gray-700'}"><span class="text-sm block leading-tight">${textStr}</span>${dateStr}</div>
+                    <div class="hidden group-hover:flex items-center space-x-2 ml-2 shrink-0"><button onclick="editTask('${t.id}')" class="text-gray-400 hover:text-brand-primary"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button><button onclick="deleteTask('${t.id}')" class="text-gray-400 hover:text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button></div>
+                </div>`;
+            }).join('') || `<div class="p-4 text-center text-gray-400 italic text-xs data-i18n" data-en="No tasks." data-es="Sin tareas.">No tasks.</div>`;
+            lucide.createIcons(); applyLanguage();
+        }
+
+        async function saveTask() {
+            const id = document.getElementById('task-edit-id').value;
+            const rawText = document.getElementById('task-input').value.trim();
+            const dueDate = document.getElementById('task-date').value;
+            if(!rawText) return;
+            const combinedText = dueDate ? `${rawText}|||${dueDate}` : rawText;
+            await apiPost('saveTask', { payload: { id: id || Date.now().toString(), text: combinedText } });
+            fetchData(); closeTaskModal();
+        }
+
+        async function toggleTask(id) {
+            const task = tasks.find(t => t.id.toString() === id.toString());
+            if(task) await apiPost('updateTask', { id, completed: !task.completed });
+            fetchData();
+        }
+
+        async function deleteTask(id) { if(confirm("Delete task?")) { await apiPost('deleteTask', { id }); fetchData(); } }
+
+        function renderTimeline(logs) {
+            const container = document.getElementById('timeline-container');
+            if(!logs || logs.length <= 1) { container.innerHTML = '<p class="text-xs text-gray-400 italic">No activity.</p>'; return; }
+            const events = logs.slice(1).map(l => ({ date: new Date(l[0]), dash: l[1], email: l[2], action: l[3] })).sort((a,b) => b.date - a.date).slice(0, 50); 
+            container.innerHTML = events.map(e => `
+                <div class="relative pl-6 group"><div class="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-brand-primary ring-4 ring-white"></div>
+                <div class="bg-gray-50 p-3 rounded-xl border border-gray-100 shadow-sm transition-shadow">
+                    <div class="flex justify-between items-start mb-1"><p class="text-xs font-bold text-gray-800 leading-tight pr-2">${e.action}</p><span class="text-[9px] text-brand-primary font-bold whitespace-nowrap bg-brand-primary/10 px-1.5 py-0.5 rounded uppercase">${!isNaN(e.date) ? e.date.toLocaleDateString() + ' ' + e.date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : 'Just now'}</span></div>
+                    <p class="text-[10px] text-gray-500">${e.email} ${e.dash && e.dash !== '-' ? ' • ' + e.dash : ''}</p></div></div>`).join('');
+        }
+
+        function initCalendar() {
+            if(typeof FullCalendar === 'undefined') return;
+            calendarInstance = new FullCalendar.Calendar(document.getElementById('calendar-view'), {
+                initialView: 'dayGridMonth', headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+                height: '100%', events: getCalendarEvents()
+            });
+            calendarInstance.render();
+        }
+
+        function getCalendarEvents() {
+            let evs = []; if(!adminData) return evs;
+            tasks.forEach(t => { const p = t.text.split('|||'); if(p[1]) evs.push({ title: `Task: ${p[0]}`, start: p[1], allDay: true, color: t.completed ? '#10b981' : '#f59e0b' }); });
+            if(adminData.campaigns && adminData.campaigns.length > 1) adminData.campaigns.slice(1).forEach(c => evs.push({ title: `Tmpl Created: ${c[1]}`, start: new Date(c[5]).toISOString(), color: '#e07cd0' }));
+            if(adminData.queue && adminData.queue.length > 1) adminData.queue.slice(1).forEach(q => evs.push({ title: `Msg: ${q[1]}`, start: new Date(q[5]).toISOString(), color: q[6] === 'Sent' ? '#10b981' : '#60a5fa' }));
+            return evs;
+        }
+
+        function updateCalendarEvents() {
+            if(calendarInstance) {
+                calendarInstance.removeAllEvents();
+                calendarInstance.addEventSource(getCalendarEvents());
+            }
+        }
+
+        function updateUIForUser(user) {
+            document.getElementById('user-name-display').innerText = user.username;
+            document.getElementById('user-role-display').innerText = user.role || 'Admin User';
+            document.getElementById('user-avatar-display').src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=8b84f4&color=fff`;
+        }
+
+        // ------------------ TAGS LOGIC ------------------
+        function toggleTag(btn) {
+            btn.classList.toggle('active-tag');
+            btn.classList.toggle('bg-brand-primary');
+            btn.classList.toggle('text-white');
+            btn.classList.toggle('border-brand-primary');
+            btn.classList.toggle('text-gray-500');
+            btn.classList.toggle('border-gray-200');
+        }
+
+        function clearTags(containerId) {
+            document.querySelectorAll(`#${containerId} .tag-btn`).forEach(btn => {
+                btn.classList.remove('active-tag', 'bg-brand-primary', 'text-white', 'border-brand-primary');
+                btn.classList.add('text-gray-500', 'border-gray-200');
+            });
+        }
+
+        // ------------------ ORGS & DASHBOARDS EDITING ------------------
+        function openOrgModal() { 
+            document.getElementById('modal-org-title').innerText = currentLang === 'en' ? 'Create Organization & Portal' : 'Crear Organización y Portal';
+            document.getElementById('org-uid').value = ''; 
+            document.getElementById('org-name').value = '';
+            document.getElementById('org-rnc').value = '';
+            document.getElementById('org-address').value = '';
+            document.getElementById('org-website').value = '';
+            document.getElementById('org-phone').value = '';
+            document.getElementById('org-email').value = '';
+            document.getElementById('org-color').value = '#8b84f4';
+            document.getElementById('org-sidebar').value = '#29225b';
+            document.getElementById('org-highlight').value = '#e07cd0';
+            document.getElementById('org-stat1').value = '92';
+            document.getElementById('org-stat2').value = '85';
+            document.getElementById('org-stat3').value = '78';
+
+            clearTags('org-tags-container');
+
+            document.getElementById('org-banner-b64').value = ''; 
+            document.getElementById('org-banner-file').value = '';
+            document.getElementById('org-banner-preview').src = '';
+            document.getElementById('org-banner-preview').classList.add('hidden');
+            document.getElementById('org-banner-placeholder').classList.remove('opacity-0');
+
+            document.getElementById('org-logo-b64').value = '';
+            document.getElementById('org-logo-file').value = '';
+            document.getElementById('org-logo').value = '';
+            document.getElementById('org-logo-preview').src = '';
+            document.getElementById('org-logo-preview').classList.add('hidden');
+            document.getElementById('org-logo-placeholder').classList.remove('hidden');
+
+            document.getElementById('org-modal').classList.remove('hidden'); 
+        }
+
+        function openEditOrgModal(uid) {
+            const org = adminData.orgs.find(o => o[0] === uid);
+            if(!org) return;
+
+            document.getElementById('org-uid').value = uid;
+            document.getElementById('org-name').value = org[1] || '';
+            document.getElementById('org-rnc').value = org[4] || '';
+            document.getElementById('org-address').value = org[5] || '';
+            document.getElementById('org-website').value = org[6] || '';
+            document.getElementById('org-phone').value = org[7] || '';
+            document.getElementById('org-email').value = org[8] || '';
+
+            const dashRow = adminData.config ? adminData.config.find(c => c[0] === uid) : null;
+            if (dashRow) {
+                document.getElementById('org-color').value = dashRow[4] || '#8b84f4';
+                document.getElementById('org-highlight').value = dashRow[5] || '#e07cd0';
+                document.getElementById('org-sidebar').value = dashRow[6] || '#29225b';
+                document.getElementById('org-stat1').value = dashRow[8] || 92;
+                document.getElementById('org-stat2').value = dashRow[9] || 85;
+                document.getElementById('org-stat3').value = dashRow[10] || 78;
+            }
+
+            clearTags('org-tags-container');
+
+            if (org[3]) {
+                document.getElementById('org-banner-preview').src = org[3];
+                document.getElementById('org-banner-preview').classList.remove('hidden');
+                document.getElementById('org-banner-placeholder').classList.add('opacity-0');
+            } else {
+                document.getElementById('org-banner-preview').src = '';
+                document.getElementById('org-banner-preview').classList.add('hidden');
+                document.getElementById('org-banner-placeholder').classList.remove('opacity-0');
+            }
+            document.getElementById('org-banner-b64').value = '';
+
+            if (org[2]) {
+                document.getElementById('org-logo-preview').src = org[2];
+                document.getElementById('org-logo-preview').classList.remove('hidden');
+                document.getElementById('org-logo-placeholder').classList.add('hidden');
+                document.getElementById('org-logo').value = org[2];
+            } else {
+                document.getElementById('org-logo-preview').src = '';
+                document.getElementById('org-logo-preview').classList.add('hidden');
+                document.getElementById('org-logo-placeholder').classList.remove('hidden');
+                document.getElementById('org-logo').value = '';
+            }
+            document.getElementById('org-logo-b64').value = '';
+
+            document.getElementById('modal-org-title').innerText = currentLang === 'en' ? 'Edit Organization' : 'Editar Organización';
+            document.getElementById('org-modal').classList.remove('hidden');
+        }
+
+        async function saveOrganization() {
+            const btn = document.getElementById('btn-save-org'); 
+            const originalText = btn.innerText;
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+
+            const uid = document.getElementById('org-uid').value;
+            const tags = Array.from(document.querySelectorAll('#org-tags-container .active-tag')).map(b => b.innerText);
+            
+            const payload = { 
+                uid: uid,
+                businessName: document.getElementById('org-name').value, 
+                rnc: document.getElementById('org-rnc').value, 
+                logoUrl: document.getElementById('org-logo-b64').value ? '' : document.getElementById('org-logo').value, 
+                logoB64: document.getElementById('org-logo-b64').value, 
+                bannerB64: document.getElementById('org-banner-b64').value, 
+                address: document.getElementById('org-address').value, 
+                website: document.getElementById('org-website').value, 
+                phone: document.getElementById('org-phone').value, 
+                email: document.getElementById('org-email').value, 
+                color: document.getElementById('org-color').value, 
+                sidebar: document.getElementById('org-sidebar').value, 
+                highlight: document.getElementById('org-highlight').value, 
+                stat1: document.getElementById('org-stat1').value, 
+                stat2: document.getElementById('org-stat2').value, 
+                stat3: document.getElementById('org-stat3').value, 
+                tags 
+            };
+
+            if(!payload.businessName) { alert("Name Required"); btn.innerHTML = originalText; return; }
+
+            if (uid) {
+                await apiPost('updateOrganization', { payload });
+            } else {
+                await apiPost('createOrganization', { payload });
+            }
+            
+            fetchData(); 
+            closeOrgModal();
+            btn.innerHTML = originalText;
+        }
+        function closeOrgModal() { document.getElementById('org-modal').classList.add('hidden'); }
+
+        function openEditDashboardModal(uid) {
+            const dashRow = adminData.config.find(c => c[0] === uid);
+            if(!dashRow) return;
+            clearTags('edit-dash-tags-container');
+            document.getElementById('edit-dash-uid').value = uid;
+            document.getElementById('edit-dash-logo').value = dashRow[2];
+            document.getElementById('edit-dash-banner').value = dashRow[3];
+            document.getElementById('edit-dash-color').value = dashRow[4];
+            document.getElementById('edit-dash-highlight').value = dashRow[5];
+            document.getElementById('edit-dash-sidebar').value = dashRow[6];
+            document.getElementById('edit-dash-stat1').value = dashRow[8] || 92;
+            document.getElementById('edit-dash-stat2').value = dashRow[9] || 85;
+            document.getElementById('edit-dash-stat3').value = dashRow[10] || 78;
+            
+            // New Tunnel Configuration Fields setup
+            document.getElementById('edit-dash-tunnel-logo').value = dashRow[15] || '';
+            document.getElementById('edit-dash-tunnel-title').value = dashRow[16] || '';
+            document.getElementById('edit-dash-tunnel-desc').value = dashRow[17] || '';
+            document.getElementById('edit-dash-tunnel-bg').value = dashRow[18] || dashRow[4] || '#df2026'; // Fallback mapping as configured in backend
+            document.getElementById('edit-dash-tunnel-line').value = dashRow[19] || '#ffffff';
+
+            const bcont = document.getElementById('edit-dash-buttons-container');
+            bcont.innerHTML = '';
+            let buttons = []; try { buttons = JSON.parse(dashRow[12] || "[]"); } catch(e) {}
+            buttons.forEach(b => addDashboardButtonField(b.title, b.url));
+            if(sortableButtons) sortableButtons.destroy();
+            if(typeof Sortable !== 'undefined') { sortableButtons = new Sortable(bcont, { animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost' }); }
+            document.getElementById('edit-dash-modal').classList.remove('hidden');
+        }
+
+        function addDashboardButtonField(title = '', url = '') {
+            const container = document.getElementById('edit-dash-buttons-container');
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-2 bg-gray-50 p-2 rounded-lg border border-gray-100 button-item';
+            div.innerHTML = `<div class="drag-handle p-1 text-gray-400 hover:text-gray-600"><i data-lucide="grip-vertical" class="w-4 h-4"></i></div><input type="text" placeholder="Button Title" value="${title}" class="w-1/3 p-2 border rounded-lg outline-none text-xs btn-title"><input type="url" placeholder="https://..." value="${url}" class="flex-1 p-2 border rounded-lg outline-none text-xs btn-url"><button type="button" onclick="this.parentElement.remove()" class="p-2 text-rose-400 hover:text-rose-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>`;
+            container.appendChild(div); lucide.createIcons();
+        }
+
+        async function saveDashboardEdit() {
+            const btn = document.getElementById('btn-save-dash'); btn.innerHTML = '...';
+            const buttons = []; document.querySelectorAll('#edit-dash-buttons-container .button-item').forEach(el => { const t = el.querySelector('.btn-title').value.trim(); const u = el.querySelector('.btn-url').value.trim(); if(t && u) buttons.push({ title: t, url: u }); });
+            const tags = Array.from(document.querySelectorAll('#edit-dash-tags-container .active-tag')).map(b => b.innerText);
+            
+            const payload = { 
+                uid: document.getElementById('edit-dash-uid').value, 
+                logoUrl: document.getElementById('edit-dash-logo').value, 
+                bannerUrl: document.getElementById('edit-dash-banner').value, 
+                primaryColor: document.getElementById('edit-dash-color').value, 
+                highlightColor: document.getElementById('edit-dash-highlight').value, 
+                sidebarColor: document.getElementById('edit-dash-sidebar').value, 
+                stat1: document.getElementById('edit-dash-stat1').value, 
+                stat2: document.getElementById('edit-dash-stat2').value, 
+                stat3: document.getElementById('edit-dash-stat3').value, 
+                tunnelLogoUrl: document.getElementById('edit-dash-tunnel-logo').value,
+                title: document.getElementById('edit-dash-tunnel-title').value,
+                description: document.getElementById('edit-dash-tunnel-desc').value,
+                tunnelBgColor: document.getElementById('edit-dash-tunnel-bg').value,
+                tunnelLineColor: document.getElementById('edit-dash-tunnel-line').value,
+                buttons, 
+                tags 
+            };
+            
+            await apiPost('updateDashboard', { payload }); 
+            fetchData(); 
+            closeEditDashboardModal();
+            btn.innerHTML = currentLang === 'en' ? 'Save Dashboard' : 'Guardar Tablero';
+        }
+        function closeEditDashboardModal() { document.getElementById('edit-dash-modal').classList.add('hidden'); }
+
+        // ------------------ AUTHENTICATION ------------------
+        function saveAuthSession(userObj, rememberMe) {
+            const userDataStr = JSON.stringify(userObj);
+            sessionStorage.setItem("admin_auth", "true");
+            sessionStorage.setItem("admin_user_data", userDataStr);
+            
+            if (rememberMe) {
+                localStorage.setItem("admin_auth", "true");
+                localStorage.setItem("admin_user_data", userDataStr);
+                localStorage.setItem("remembered_email", userObj.email);
+            }
+            
+            if (userObj.avatar && userObj.avatar.startsWith('data:image')) {
+                localStorage.setItem("offline_avatar_backup", userObj.avatar);
+            }
+
+            updateUIForUser(userObj);
+            document.getElementById("login-overlay").classList.add("hidden");
+        }
+
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("admin-email").value.trim().toLowerCase();
+            const password = document.getElementById("admin-password").value.trim(); 
+            const rememberMe = document.getElementById("remember-me").checked;
+            const btn = document.querySelector("#login-form button");
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+
+            try {
+                const result = await apiPost('adminLogin', { email, password });
+                if (result.success) {
+                    saveAuthSession(result.user, rememberMe);
+                    fetchData();
+                } else {
+                    document.getElementById("login-error").innerText = result.error || "Login Failed";
+                    document.getElementById("login-error").classList.remove("hidden");
+                }
+            } catch(err) {
+                document.getElementById("login-error").innerText = "Connection failed. Please check your network or try again later.";
+                document.getElementById("login-error").classList.remove("hidden");
+            } finally {
+                btn.innerHTML = `<span class="data-i18n" data-en="Authenticate" data-es="Autenticar">Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>`;
+                lucide.createIcons(); applyLanguage();
+            }
+        });
+
+        // ------------------ UI EVENT LISTENERS & HELPERS ------------------
+        function toggleUserModal(e) { 
+            if(e) e.stopPropagation();
+            document.getElementById('user-context-modal').classList.toggle('hidden'); 
+        }
+
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('user-context-modal');
+            if(modal && !modal.classList.contains('hidden') && !e.target.closest('.group')) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        function handleAvatarSelect(ev) { const f = ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { document.getElementById('profile-preview').src = e.target.result; document.getElementById('prof-avatar-b64').value = e.target.result; }; r.readAsDataURL(f); }
+        function handleOrgLogoSelect(ev) { const f = ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { document.getElementById('org-logo-b64').value = e.target.result; document.getElementById('org-logo-preview').src = e.target.result; document.getElementById('org-logo-preview').classList.remove('hidden'); document.getElementById('org-logo-placeholder').classList.add('hidden'); }; r.readAsDataURL(f); }
+        function handleBannerSelect(ev) { const f = ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { document.getElementById('org-banner-preview').src = e.target.result; document.getElementById('org-banner-preview').classList.remove('hidden'); document.getElementById('org-banner-placeholder').classList.add('opacity-0'); document.getElementById('org-banner-b64').value = e.target.result; }; r.readAsDataURL(f); }
+
+        function openProfileModal() {
+            const userStr = sessionStorage.getItem("admin_user_data") || localStorage.getItem("admin_user_data");
+            if(!userStr) return;
+            const user = JSON.parse(userStr);
+            document.getElementById('prof-username').value = user.username;
+            document.getElementById('prof-role').value = user.role || 'Admin';
+            document.getElementById('profile-preview').src = user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=8b84f4&color=fff`;
+            document.getElementById('prof-avatar-b64').value = ''; 
+            document.getElementById('prof-lang').value = currentLang;
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+
+        async function saveProfile() {
+            const btn = document.getElementById('btn-save-profile');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+
+            try {
+                const user = JSON.parse(sessionStorage.getItem("admin_user_data") || localStorage.getItem("admin_user_data"));
+                const payload = { username: document.getElementById('prof-username').value, password: document.getElementById('prof-password').value, lang: document.getElementById('prof-lang').value, avatarB64: document.getElementById('prof-avatar-b64').value };
+                
+                let res;
+                try {
+                    res = await apiPost('updateProfile', { email: user.email, payload });
+                } catch(e) {
+                    console.error("Backend unavailable. Profile update failed.", e);
+                    res = { success: false, error: "Connection failed." };
+                }
+                
+                if(res.success) { 
+                    if(res.newAvatar) user.avatar = res.newAvatar; 
+                    else if(payload.avatarB64) user.avatar = payload.avatarB64; 
+                    
+                    user.username = payload.username; 
+                    sessionStorage.setItem("admin_user_data", JSON.stringify(user)); 
+                    
+                    if (localStorage.getItem("admin_auth") === "true") {
+                        localStorage.setItem("admin_user_data", JSON.stringify(user));
+                    }
+                    if (user.avatar && user.avatar.startsWith('data:image')) {
+                        localStorage.setItem("offline_avatar_backup", user.avatar);
+                    }
+
+                    currentLang = payload.lang; 
+                    updateUIForUser(user); 
+                    applyLanguage(); 
+                    closeProfileModal(); 
+                }
+                else { alert("Failed to save profile on backend."); }
+            } finally {
+                btn.innerHTML = originalText;
+                applyLanguage();
+            }
+        }
+
+        // ------------------ WA FORMAT & MEDIA ------------------
+        function toggleSubject() { 
+            const type = document.getElementById('msg-type').value;
+            document.getElementById('subject-box').style.display = type === 'email' ? 'block' : 'none'; 
+            document.getElementById('wa-attachment-box').style.display = type === 'whatsapp' ? 'block' : 'none';
+            document.getElementById('wa-toolbar').style.display = type === 'whatsapp' ? 'flex' : 'none';
+            applyLanguage(); populateRecipientList(); updateLivePreview();
+        }
+        function handleWaMediaSelect(ev) { const f = ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e) => { document.getElementById('msg-wa-media-b64').value = e.target.result; document.getElementById('msg-wa-preview').src = e.target.result; document.getElementById('msg-wa-preview-container').classList.remove('hidden'); updateLivePreview(); }; r.readAsDataURL(f); }
+        function clearWaMedia() { document.getElementById('msg-wa-media-b64').value = ''; document.getElementById('msg-wa-preview-container').classList.add('hidden'); updateLivePreview(); }
+        function insertWaFormat(c) {
+            const t = document.getElementById('msg-body'); const s = t.selectionStart; const e = t.selectionEnd; const v = t.value;
+            t.value = v.substring(0, s) + c + (v.substring(s, e) || '') + c + v.substring(e);
+            t.focus(); updateLivePreview();
+        }
+        function updateLivePreview() {
+            const t = document.getElementById('msg-type').value; const b = document.getElementById('msg-body').value;
+            const doc = document.getElementById('msg-live-preview').contentWindow.document; doc.open();
+            if (t === 'whatsapp') {
+                let f = b.replace(/\n/g, '<br>').replace(/\*(.*?)\*/g, '<b>$1</b>').replace(/_(.*?)_/g, '<i>$1</i>').replace(/~(.*?)~/g, '<s>$1</s>');
+                const m = document.getElementById('msg-wa-media-b64').value || document.getElementById('msg-wa-media').value;
+                doc.write(`<div style="font-family:sans-serif; background:#e5ddd5; padding:20px; min-height:100vh;"><div style="background:#fff; max-width:85%; padding:8px; border-radius:0 12px 12px 12px; box-shadow:0 1px 1px rgba(0,0,0,0.1);">${m ? `<img src="${m}" style="width:100%; border-radius:8px; margin-bottom:8px;">` : ''}<div style="font-size:14px; color:#111;">${f || 'Message...'}</div></div></div>`);
+            } else doc.write(b || "<p style='padding:20px; color:#aaa;'>Preview...</p>"); doc.close();
+        }
+
+        function renderData(data) {
+            document.getElementById('kpi-dashboards').innerText = (data.config && data.config.length > 0 ? data.config.length - 1 : 0);
+            document.getElementById('kpi-users').innerText = (data.users && data.users.length > 0 ? data.users.length - 1 : 0);
+            document.getElementById('kpi-logs').innerText = (data.logs && data.logs.length > 0 ? data.logs.length - 1 : 0);
+            const rt = (id, rows, fmt) => document.getElementById(id).innerHTML = (rows && rows.length > 1) ? rows.slice(1).reverse().map(fmt).join('') : '<tr><td colspan="4" class="p-4 italic text-gray-400 data-i18n" data-en="No data available" data-es="No hay datos">No data available</td></tr>';
+            
+            rt('orgs-tbody', data.orgs, r => `<tr><td class="p-4 font-bold text-gray-800">${r[1]}</td><td class="p-4 font-mono text-gray-500">${r[4]}</td><td class="p-4 text-xs text-gray-500">${r[8]}</td><td class="p-4 text-right"><button onclick="openEditOrgModal('${r[0]}')" class="text-xs font-bold text-brand-primary bg-brand-primary/10 px-3 py-1 rounded-full hover:bg-brand-primary/20 transition-colors data-i18n" data-en="Edit" data-es="Editar">Edit</button></td></tr>`);
+            rt('dashboards-tbody', data.config, r => `<tr><td class="p-4 font-medium">${r[1]}</td><td class="p-4"><div class="flex space-x-1"><div class="w-3 h-3 rounded-full" style="background:${r[4]}"></div><div class="w-3 h-3 rounded-full" style="background:${r[5]}"></div></div></td><td class="p-4 text-right"><button onclick="openEditDashboardModal('${r[0]}')" class="text-xs font-bold text-gray-500 mr-2">Edit</button><a href="${r[20] || r[11]}" target="_blank" class="text-brand-primary font-bold text-xs">Open</a></td></tr>`);
+            rt('users-tbody', data.users, r => `<tr><td class="p-4 font-bold">${r[2]} ${r[3]}<br><span class="text-[10px] text-gray-400">${r[4]}</span></td><td class="p-4">${r[1]}</td><td class="p-4"><span class="px-2 py-1 rounded-full text-[10px] ${r[7]==='Active'?'bg-emerald-100 text-emerald-700':'bg-rose-100 text-rose-700'}">${r[7]}</span></td><td class="p-4 text-right"><button onclick="toggleUserStatus('${r[0]}', '${r[7]}')" class="text-xs font-bold text-brand-primary bg-brand-primary/10 px-3 py-1 rounded-full">${r[7]==='Active'?'Block':'Unblock'}</button></td></tr>`);
+            rt('team-tbody', data.admins, r => `<tr><td class="p-4 font-medium text-gray-700">${r[0]}</td><td class="p-4 font-bold text-xs uppercase text-brand-primary">${r[6]||'Admin'}</td><td class="p-4 text-xs font-mono text-gray-400">${r[3] === 'Never' ? 'Never' : (!isNaN(new Date(r[3])) ? new Date(r[3]).toLocaleString() : r[3])}</td><td class="p-4 text-right"><button onclick="deleteAdmin('${r[0]}')" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td></tr>`);
+            rt('logs-tbody', data.logs, r => `<tr><td class="p-4 text-xs text-gray-400">${!isNaN(new Date(r[0])) ? new Date(r[0]).toLocaleString() : r[0]}</td><td class="p-4 text-brand-primary font-bold text-xs">${r[3]}</td></tr>`);
+            
+            const funnelCounts = { 'Pending': 0, 'Dashboard Created': 0, 'Deployed': 0, 'Contacted': 0, 'Approved': 0, 'Canceled': 0 };
+            if (data.config && data.config.length > 1) data.config.slice(1).forEach(row => { let s = row[13] || 'Pending'; if(funnelCounts[s] !== undefined) funnelCounts[s]++; });
+            const stages = [{n:'Pending',c:'#94a3b8'},{n:'Dashboard Created',c:'#60a5fa'},{n:'Deployed',c:'#8b84f4'},{n:'Contacted',c:'#f59e0b'},{n:'Approved',c:'#10b981'},{n:'Canceled',c:'#ef4444'}];
+            document.getElementById('funnel-metrics-container').innerHTML = stages.map(s => `<div class="p-4 rounded-xl border border-gray-100 bg-gray-50 flex flex-col items-center justify-center relative overflow-hidden group"><div class="absolute top-0 left-0 w-full h-1" style="background-color: ${s.c}"></div><h4 class="text-[10px] font-bold text-gray-500 uppercase text-center mb-1 mt-2">${s.n}</h4><p class="text-2xl font-black text-gray-800">${funnelCounts[s.n] || 0}</p></div>`).join('');
+            
+            const campaigns = (data.campaigns || []).slice(1);
+            document.getElementById('campaign-list').innerHTML = campaigns.map(c => `
+                <li class="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                    <div><p class="font-bold text-gray-800 text-sm">${c[1]}</p><p class="text-[10px] font-bold text-brand-primary uppercase">${c[2]}</p></div>
+                    <button onclick="loadTemplate('${c[0]}')" class="text-xs font-bold text-brand-primary bg-brand-primary/10 px-3 py-1 rounded-full data-i18n" data-en="Use" data-es="Usar">Use</button>
+                </li>
+            `).join('') || '<p class="p-8 text-center text-xs text-gray-400 italic data-i18n" data-en="No templates." data-es="Sin plantillas.">No templates.</p>';
+
+            const queue = (data.queue || []).slice(1);
+            document.getElementById('queue-list').innerHTML = queue.reverse().map(q => `
+                <li class="p-4 flex justify-between items-center ${q[6] === 'Sent' ? 'bg-emerald-50/20' : ''}">
+                    <div class="max-w-[70%]"><p class="font-bold text-gray-700 text-sm truncate">${q[1]}</p><p class="text-[10px] text-gray-400">${q[4]}</p></div>
+                    <div class="text-[10px] font-bold text-brand-primary uppercase">${q[6]}</div>
+                </li>
+            `).join('') || '<p class="p-8 text-center text-xs text-gray-400 italic data-i18n" data-en="Queue empty." data-es="Cola vacía.">Queue empty.</p>';
+
+            renderTimeline(data.logs); renderTasks(); 
+            if(typeof Chart !== 'undefined' && typeof renderChart === 'function') renderChart(); 
+            if(typeof FullCalendar !== 'undefined') updateCalendarEvents(); 
+            
+            // Trigger search filter if there was text
+            const sq = document.getElementById('global-search').value;
+            if (sq) handleGlobalSearch(sq);
+            
+            applyLanguage();
+        }
+
+        function switchTab(tabId) {
+            const searchInput = document.getElementById('global-search');
+            if(searchInput) {
+                searchInput.value = '';
+            }
+            handleGlobalSearch('');
+            
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('bg-white/10', 'border-brand-highlight'));
+            const b = document.getElementById('nav-' + tabId); if(b) b.classList.add('bg-white/10', 'border-brand-highlight');
+            const titles = { overview: 'Overview', calendar: 'Calendar', messaging: 'Messaging Hub', users: 'Users', organizations: 'Organizations', dashboards: 'Dashboards', team: 'Admin Access', logs: 'Logs' };
+            document.getElementById('header-title').innerText = titles[tabId] || 'Resource';
+            if (tabId === 'calendar') setTimeout(() => { if(!calendarInstance) initCalendar(); else calendarInstance.render(); }, 100);
+            lucide.createIcons();
+        }
+
+        function openComposeModal() { document.getElementById('compose-modal').classList.remove('hidden'); populateRecipientList(); updateLivePreview(); }
+        function closeComposeModal() { document.getElementById('compose-modal').classList.add('hidden'); }
+        function openTaskModal() { document.getElementById('task-modal').classList.remove('hidden'); }
+        function closeTaskModal() { document.getElementById('task-modal').classList.add('hidden'); document.getElementById('task-edit-id').value = ''; }
+        
+        function logoutAdmin() { 
+            sessionStorage.clear(); 
+            localStorage.removeItem("admin_auth");
+            localStorage.removeItem("admin_user_data");
+            window.location.reload(); 
+        }
+        
+        function openResource(n, u) { document.getElementById('resource-iframe').src = u; switchTab('resource-viewer'); document.getElementById('header-title').innerText = n; }
+        function editTask(id) { document.getElementById('task-edit-id').value = id; const t = tasks.find(t => t.id == id); const p = t.text.split('|||'); document.getElementById('task-input').value = p[0]; document.getElementById('task-date').value = p[1] || ''; openTaskModal(); }
+        async function toggleUserStatus(uid, status) { const ns = status === 'Active' ? 'Blocked' : 'Active'; if(confirm(`Change status to ${ns}?`)) { await apiPost('toggleUserStatus', { uid, status: ns }); fetchData(); } }
+        async function deleteAdmin(email) { if(confirm(`Delete ${email}?`)) { await apiPost('deleteAdmin', { email }); fetchData(); } }
+
+        async function sendDirectMessage() {
+            const btn = document.getElementById('btn-send-msg'); btn.innerHTML = '...';
+            const payload = { type: document.getElementById('msg-type').value, recipient: document.getElementById('msg-recipient').value, subject: document.getElementById('msg-subject').value, body: document.getElementById('msg-body').value, scheduleDate: document.getElementById('msg-schedule').value, mediaUrl: document.getElementById('msg-wa-media').value, mediaB64: document.getElementById('msg-wa-media-b64').value };
+            await apiPost('sendMessage', { payload }); fetchData(); closeComposeModal(); btn.innerText = currentLang === 'en' ? 'Send Now' : 'Enviar';
+        }
+        
+        async function openCampaignSave() { const title = prompt("Save as:"); if(!title) return; const payload = { title, type: document.getElementById('msg-type').value, subject: document.getElementById('msg-subject').value, body: document.getElementById('msg-body').value }; await apiPost('saveCampaign', { payload }); fetchData(); }
+        function loadTemplate(id) { const t = adminData.campaigns.find(c => c[0] === id); if(t) { document.getElementById('msg-type').value = t[2]; document.getElementById('msg-subject').value = t[3]; document.getElementById('msg-body').value = t[4]; toggleSubject(); openComposeModal(); } }
+        
+        function openAddAdminModal() { document.getElementById('admin-modal').classList.remove('hidden'); }
+        function closeAddAdminModal() { document.getElementById('admin-modal').classList.add('hidden'); }
+        
+        async function saveNewAdmin() { 
+            const email = document.getElementById('new-admin-email').value; 
+            const role = document.getElementById('new-admin-role').value; 
+            const password = document.getElementById('new-admin-pass').value; 
+            if(!email || !password) return; 
+            await apiPost('addAdmin', { email, password, role }); 
+            fetchData(); 
+            closeAddAdminModal(); 
+        }
+
+        // Initialize App
+        const localAuth = localStorage.getItem("admin_auth");
+        const sessionAuth = sessionStorage.getItem("admin_auth");
+
+        if (localAuth === "true" || sessionAuth === "true") {
+            const savedData = localStorage.getItem("admin_user_data") || sessionStorage.getItem("admin_user_data"); 
+            if(savedData) {
+                const userObj = JSON.parse(savedData);
+                const offlineAvatar = localStorage.getItem("offline_avatar_backup");
+                if(offlineAvatar && (!userObj.avatar || userObj.avatar.trim() === "")) {
+                    userObj.avatar = offlineAvatar;
+                }
+                updateUIForUser(userObj);
+            }
+            document.getElementById("login-overlay").classList.add("hidden"); 
+            setSystemStatus('syncing');
+            fetchData();
+        } else {
+            const rememberedEmail = localStorage.getItem("remembered_email");
+            if (rememberedEmail) {
+                document.getElementById("admin-email").value = rememberedEmail;
+                document.getElementById("remember-me").checked = true;
+            }
+        }
+    </script>
+</body>
+</html>
