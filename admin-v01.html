@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin | Dashboard Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Search Dropdown styling */
+        .search-results { max-height: 200px; overflow-y: auto; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: '#8b84f4',
+                            highlight: '#e07cd0',
+                            bg: '#f1f0fb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg flex h-screen overflow-hidden text-gray-800 relative">
+
+    <!-- SECURE LOGIN OVERLAY -->
+    <div id="login-overlay" class="fixed inset-0 z-[999] bg-cover bg-center flex items-center justify-center p-4" style="background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/17b83bfbb8eda81d4cb5eb2ae8dbe506bd649401.png');">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-brand-highlight"></div>
+            <div class="flex items-center justify-center mb-1">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/d3c6b6924c38c54a075ce5e26c46be0f426c8779.png" alt="Bebell Logo" class="w-[150px] h-[150px] object-contain transition-all duration-300 transform hover:scale-110 hover:brightness-110 drop-shadow-md hover:drop-shadow-xl cursor-pointer">
+            </div>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Bebell Digital Solutions</h2>
+            <p class="text-center text-gray-500 mb-8 text-sm">Restricted Area. Authorized Access Only.</p>
+            
+            <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl text-center font-medium"></div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Email</label>
+                    <input type="email" id="admin-email" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Password</label>
+                    <input type="password" id="admin-password" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all">
+                </div>
+                <button type="submit" id="btn-login" class="w-full mt-6 bg-brand-primary hover:opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center">
+                    <span>Authenticate</span>
+                    <i data-lucide="log-in" class="w-5 h-5 ml-2" id="login-icon"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex shrink-0">
+        <!-- Brand Logo Header -->
+        <div class="h-24 flex items-center justify-center px-4 border-b border-white/10 shrink-0 bg-slate-950/50">
+            <img src="https://bucket.mlcdn.com/a/3336/3336910/images/d3c6b6924c38c54a075ce5e26c46be0f426c8779.png" 
+                 alt="Admin Logo" 
+                 class="max-h-14 object-contain transition-all duration-300 transform hover:scale-105 hover:brightness-110 drop-shadow-lg cursor-pointer">
+        </div>
+        
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <button onclick="switchTab('overview')" id="nav-overview" class="w-full flex items-center px-6 py-3 bg-brand-primary text-white border-l-4 border-brand-highlight transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Overview
+            </button>
+            <button onclick="switchTab('dashboards')" id="nav-dashboards" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="monitor-smartphone" class="w-5 h-5 mr-3"></i> Dashboards
+            </button>
+            <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="users" class="w-5 h-5 mr-3"></i> Users
+            </button>
+            <button onclick="switchTab('templates')" id="nav-templates" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="file-text" class="w-5 h-5 mr-3"></i> Templates
+            </button>
+            <button onclick="switchTab('team')" id="nav-team" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="shield-check" class="w-5 h-5 mr-3"></i> Team
+            </button>
+            <button onclick="switchTab('logs')" id="nav-logs" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="activity" class="w-5 h-5 mr-3"></i> Activity Logs
+            </button>
+        </nav>
+        <div class="p-6 border-t border-white/10 text-xs text-slate-500 flex justify-between items-center bg-slate-950/50">
+            <span>Connected to DB</span>
+            <button onclick="logoutAdmin()" class="text-slate-400 hover:text-white" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <h2 id="header-title" class="text-2xl font-bold text-gray-800">System Overview</h2>
+            <div class="flex items-center space-x-3">
+                <button onclick="openSendModal()" class="flex items-center px-4 py-2 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium shadow-sm">
+                    <i data-lucide="send" class="w-4 h-4 mr-2"></i> Send Message
+                </button>
+                <button onclick="fetchData()" class="flex items-center px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-lg hover:bg-brand-primary/20 transition-colors text-sm font-medium border border-brand-primary/20">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2" id="refresh-icon"></i> Sync Data
+                </button>
+            </div>
+        </header>
+
+        <!-- Initial Loader -->
+        <div id="main-loader" class="absolute inset-0 top-20 bg-brand-bg/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center hidden">
+            <i data-lucide="loader-2" class="w-10 h-10 text-brand-highlight animate-spin mb-4"></i>
+            <p class="text-gray-600 font-medium bg-white px-4 py-2 rounded-full shadow-sm">Syncing secure database...</p>
+        </div>
+
+        <div class="flex-1 overflow-auto p-8 relative">
+            
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-content active space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mr-4"><i data-lucide="monitor" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-gray-500 font-medium">Active Dashboards</p><h3 id="kpi-dashboards" class="text-2xl font-bold text-gray-800">-</h3></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center mr-4"><i data-lucide="users" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-gray-500 font-medium">Total Users</p><h3 id="kpi-users" class="text-2xl font-bold text-gray-800">-</h3></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center">
+                        <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-500 flex items-center justify-center mr-4"><i data-lucide="mouse-pointer-click" class="w-6 h-6"></i></div>
+                        <div><p class="text-sm text-gray-500 font-medium">Total Interactions</p><h3 id="kpi-logs" class="text-2xl font-bold text-gray-800">-</h3></div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 w-full max-w-4xl">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Activity by Dashboard</h3>
+                    <div class="h-64 w-full">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DASHBOARDS TAB -->
+            <div id="tab-dashboards" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-500">Manage client portals and brand themes.</p>
+                    <button onclick="document.getElementById('create-modal').classList.remove('hidden')" class="bg-brand-primary hover:opacity-90 text-white px-4 py-2 rounded-lg font-medium flex items-center transition-colors shadow-sm">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Dashboard
+                    </button>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th class="p-4 font-semibold">Dashboard Name</th>
+                                    <th class="p-4 font-semibold">Theme Colors</th>
+                                    <th class="p-4 font-semibold">Public Link</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboards-tbody" class="text-sm divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="tab-users" class="tab-content">
+                <p class="text-gray-500 mb-6">List of registered users across all dashboards.</p>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th class="p-4 font-semibold">Name & Email</th>
+                                    <th class="p-4 font-semibold">Dashboard</th>
+                                    <th class="p-4 font-semibold">Role</th>
+                                    <th class="p-4 font-semibold">Status</th>
+                                    <th class="p-4 font-semibold">Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody" class="text-sm divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEMPLATES TAB -->
+            <div id="tab-templates" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-500">Manage Email and WhatsApp (WBiz) message templates.</p>
+                    <button onclick="document.getElementById('template-modal').classList.remove('hidden')" class="bg-brand-primary hover:opacity-90 text-white px-4 py-2 rounded-lg font-medium flex items-center transition-colors shadow-sm">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2"></i> New Template
+                    </button>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th class="p-4 font-semibold">Template Name</th>
+                                    <th class="p-4 font-semibold">Channel</th>
+                                    <th class="p-4 font-semibold">Subject</th>
+                                    <th class="p-4 font-semibold">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="templates-tbody" class="text-sm divide-y divide-gray-100">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM TAB -->
+            <div id="tab-team" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-500">Admins with access to this panel (Managed from Sheets).</p>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden w-full max-w-4xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th class="p-4 font-semibold">Email</th>
+                                    <th class="p-4 font-semibold">Status</th>
+                                    <th class="p-4 font-semibold">Last Login</th>
+                                </tr>
+                            </thead>
+                            <tbody id="team-tbody" class="text-sm divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS TAB -->
+            <div id="tab-logs" class="tab-content">
+                <p class="text-gray-500 mb-6">Real-time telemetry and user tracking.</p>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-200">
+                                    <th class="p-4 font-semibold">Timestamp</th>
+                                    <th class="p-4 font-semibold">Dashboard</th>
+                                    <th class="p-4 font-semibold">User</th>
+                                    <th class="p-4 font-semibold">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody" class="text-sm divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- CREATE DASHBOARD MODAL -->
+    <div id="create-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
+                <h3 class="font-bold text-gray-800 text-lg">Create New Dashboard</h3>
+                <button onclick="document.getElementById('create-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Brand / Dashboard Name</label>
+                    <input type="text" id="new-name" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="e.g. Acme Corp Portal">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Logo URL</label>
+                    <input type="text" id="new-logo" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="https://...">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Logo URL</label>
+                    <input type="text" id="new-logo" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" placeholder="https://...">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Highlight Color</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="new-color" value="#6366f1" class="w-8 h-8 rounded border cursor-pointer">
+                            <span class="text-[10px] text-gray-500 font-mono" id="lbl-color">#6366f1</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Sidebar Bg</label>
+                        <div class="flex items-center space-x-2">
+                            <input type="color" id="new-sidebar" value="#1e293b" class="w-8 h-8 rounded border cursor-pointer">
+                            <span class="text-[10px] text-gray-500 font-mono" id="lbl-sidebar">#1e293b</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 pt-2 border-t border-gray-100">
+                    <div><label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Brand ID %</label><input type="number" id="new-stat1" value="92" class="w-full px-3 py-2 border rounded-xl text-sm"></div>
+                    <div><label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Dig. Pres. %</label><input type="number" id="new-stat2" value="85" class="w-full px-3 py-2 border rounded-xl text-sm"></div>
+                    <div><label class="block text-[10px] font-semibold text-gray-600 uppercase mb-1">Conv. Rep. %</label><input type="number" id="new-stat3" value="78" class="w-full px-3 py-2 border rounded-xl text-sm"></div>
+                </div>
+
+                <div class="pt-2 border-t border-gray-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-[10px] font-semibold text-gray-600 uppercase">Custom Sidebar Links (Optional)</label>
+                        <button type="button" onclick="addModuleField()" class="text-brand-primary hover:text-brand-highlight text-[10px] font-bold flex items-center bg-brand-primary/10 px-2 py-1 rounded"><i data-lucide="plus" class="w-3 h-3 mr-1"></i> Add Link</button>
+                    </div>
+                    <div id="modules-container" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 shrink-0 bg-white">
+                <button onclick="createNewDashboard()" id="btn-create" class="w-full bg-brand-primary hover:opacity-90 text-white font-bold py-3 rounded-xl flex justify-center items-center transition-colors shadow-md">
+                    <span>Generate Secure Link</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CREATE TEMPLATE MODAL -->
+    <div id="template-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800 text-lg">Create Template</h3>
+                <button onclick="document.getElementById('template-modal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Template Name</label>
+                    <input type="text" id="tpl-name" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="e.g. Welcome Message">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Channel</label>
+                    <select id="tpl-channel" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm bg-white" onchange="toggleSubjectField()">
+                        <option value="email">Email (Alias)</option>
+                        <option value="whatsapp">WhatsApp (WBiz)</option>
+                    </select>
+                </div>
+                <div id="tpl-subject-container">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Email Subject</label>
+                    <input type="text" id="tpl-subject" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="Subject line...">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Message Body</label>
+                    <textarea id="tpl-body" rows="4" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="Type your message here. Use {{name}} to insert client's name."></textarea>
+                </div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 shrink-0 bg-white">
+                <button onclick="saveTemplate()" class="w-full bg-brand-primary hover:opacity-90 text-white font-bold py-3 rounded-xl transition-colors shadow-md">
+                    Save Template
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEND MESSAGE MODAL -->
+    <div id="send-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center"><i data-lucide="send" class="w-5 h-5 mr-2 text-brand-primary"></i> Send Campaign</h3>
+                <button onclick="closeSendModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-5">
+                <!-- Client Search -->
+                <div class="relative">
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Select Client (Search)</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-gray-400"></i>
+                        <input type="text" id="client-search" class="w-full pl-9 pr-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm" placeholder="Search name or email..." onkeyup="filterClients()">
+                    </div>
+                    <!-- Dropdown Results -->
+                    <ul id="client-dropdown" class="absolute z-10 w-full bg-white border border-gray-200 mt-1 rounded-xl shadow-lg search-results hidden">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+
+                <!-- Selected Client display -->
+                <div id="selected-client-box" class="hidden bg-brand-primary/10 border border-brand-primary/20 p-3 rounded-xl flex justify-between items-center">
+                    <div>
+                        <p id="sel-client-name" class="text-sm font-bold text-gray-800"></p>
+                        <p id="sel-client-email" class="text-xs text-brand-primary"></p>
+                    </div>
+                    <button onclick="clearSelectedClient()" class="text-brand-primary hover:text-brand-highlight"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
+                </div>
+
+                <!-- Template Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Choose Template</label>
+                    <select id="send-template" class="w-full px-3 py-2 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none text-sm bg-white">
+                        <option value="">-- Select a template --</option>
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+                
+                <!-- Action / Notification Box -->
+                <div id="send-notification" class="hidden p-3 rounded-xl text-sm font-medium text-center"></div>
+            </div>
+
+            <div class="p-6 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
+                <button onclick="closeSendModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium text-sm">Cancel</button>
+                <button onclick="dispatchMessage()" id="btn-dispatch" class="px-6 py-2 bg-brand-primary hover:opacity-90 text-white font-bold rounded-xl shadow-md transition-all flex items-center">
+                    <i data-lucide="paperclip" class="w-4 h-4 mr-2"></i> Send Now
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔴 PASTE YOUR APP SCRIPT DEPLOYMENT URL HERE:
+        const API_URL = "https://script.google.com/macros/s/AKfycbwYOUR_APP_SCRIPT_ID/exec";
+        
+        let chartInstance = null;
+        let globalUsers = [];
+        let globalTemplates = [
+            // Default mock templates
+            { id: 1, name: "Welcome Onboard", channel: "email", subject: "Welcome to your Dashboard", body: "Hi {{name}},\n\nYour dashboard is ready!" },
+            { id: 2, name: "WhatsApp Alert (WBiz)", channel: "whatsapp", subject: "", body: "Hello {{name}}, we have an update for you!" }
+        ];
+        let selectedUserForMessage = null;
+
+        lucide.createIcons();
+
+        // Check Login State on Load
+        document.addEventListener("DOMContentLoaded", () => {
+            if (sessionStorage.getItem("admin_auth") === "true") {
+                document.getElementById("login-overlay").classList.add("hidden");
+                fetchData();
+            }
+            renderTemplates(); // Load mock templates initially
+        });
+
+        // ------------------ LOGIN LOGIC ------------------
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn-login");
+            const errBox = document.getElementById("login-error");
+            
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+            errBox.classList.add("hidden");
+
+            const email = document.getElementById("admin-email").value;
+            const password = document.getElementById("admin-password").value;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'adminLogin', email: email, password: password })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    sessionStorage.setItem("admin_auth", "true");
+                    document.getElementById("login-overlay").classList.add("hidden");
+                    fetchData();
+                } else {
+                    errBox.innerText = result.error || "Authentication failed.";
+                    errBox.classList.remove("hidden");
+                }
+            } catch (err) {
+                errBox.innerText = "Connection error. Is API_URL set?";
+                errBox.classList.remove("hidden");
+            }
+            
+            btn.innerHTML = '<span>Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>';
+            lucide.createIcons();
+        });
+
+        function logoutAdmin() {
+            sessionStorage.removeItem("admin_auth");
+            window.location.reload();
+        }
+
+        // ------------------ UI / TAB NAVIGATION ------------------
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('bg-brand-primary', 'text-white', 'border-brand-highlight');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white', 'border-transparent', 'text-slate-300');
+            });
+            const activeBtn = document.getElementById('nav-' + tabId);
+            activeBtn.classList.remove('hover:bg-slate-800', 'hover:text-white', 'border-transparent', 'text-slate-300');
+            activeBtn.classList.add('bg-brand-primary', 'text-white', 'border-brand-highlight');
+            
+            const titles = { 
+                'overview': 'System Overview', 
+                'dashboards': 'Dashboards Configuration', 
+                'users': 'User Management', 
+                'templates': 'Message Templates',
+                'team': 'Admin Team Access', 
+                'logs': 'Activity Telemetry' 
+            };
+            document.getElementById('header-title').innerText = titles[tabId];
+        }
+
+        // Create Dashboard Helpers
+        document.getElementById('new-color').addEventListener('input', e => document.getElementById('lbl-color').innerText = e.target.value);
+        document.getElementById('new-sidebar').addEventListener('input', e => document.getElementById('lbl-sidebar').innerText = e.target.value);
+
+        function addModuleField() {
+            const container = document.getElementById('modules-container');
+            const div = document.createElement('div');
+            div.className = 'flex space-x-2 module-row items-center bg-gray-50 p-2 rounded-lg border border-gray-100';
+            div.innerHTML = `
+                <input type="text" placeholder="Title (e.g. Audit)" class="w-1/3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary outline-none text-xs mod-title">
+                <input type="url" placeholder="https://..." class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-primary outline-none text-xs mod-url">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-600 px-2 shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            `;
+            container.appendChild(div);
+            lucide.createIcons();
+        }
+
+        // ------------------ DATA FETCHING & RENDERING ------------------
+        async function fetchData() {
+            document.getElementById('main-loader').classList.remove('hidden');
+            document.getElementById('refresh-icon').classList.add('animate-spin');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getAdminData' })
+                });
+                const result = await response.json();
+                
+                if(result.success) {
+                    renderData(result.data);
+                } else {
+                    console.error("Data fetch error", result);
+                }
+            } catch (err) {
+                console.error("Network or Setup Error:", err);
+            }
+            
+            document.getElementById('main-loader').classList.add('hidden');
+            document.getElementById('refresh-icon').classList.remove('animate-spin');
+        }
+
+        function renderData(data) {
+            // Dashboards
+            const configs = data.config.slice(1);
+            document.getElementById('kpi-dashboards').innerText = configs.length;
+            
+            document.getElementById('dashboards-tbody').innerHTML = configs.map(c => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 border-b border-gray-100 flex items-center">
+                        <img src="${c[2]}" class="w-8 h-8 rounded bg-gray-100 object-contain mr-3 border">
+                        <span class="font-medium text-gray-800">${c[1]}</span>
+                    </td>
+                    <td class="p-4 border-b border-gray-100">
+                        <a href="${c[10]}" target="_blank" class="text-brand-primary hover:text-brand-highlight text-xs flex items-center font-mono bg-brand-primary/10 px-2 py-1 rounded w-max">
+                            Open Link <i data-lucide="external-link" class="w-3 h-3 ml-1"></i>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Users
+            const users = data.users.slice(1);
+            document.getElementById('kpi-users').innerText = users.length;
+            
+            // Map raw user arrays to objects for easy search later
+            globalUsers = users.map(u => ({
+                id: u[0], dashboard: u[1], firstName: u[2], lastName: u[3], 
+                email: u[4], role: u[5], status: u[7], joined: u[8]
+            }));
+
+            document.getElementById('users-tbody').innerHTML = globalUsers.map(u => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 border-b border-gray-100">
+                        <p class="font-medium text-gray-800">${u.firstName} ${u.lastName}</p>
+                        <p class="text-xs text-gray-500">${u.email}</p>
+                    </td>
+                    <td class="p-4 border-b border-gray-100 text-gray-600">${u.dashboard}</td>
+                    <td class="p-4 border-b border-gray-100 text-gray-600">${u.role}</td>
+                    <td class="p-4 border-b border-gray-100">
+                        <span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${u.status==='Active'?'bg-emerald-100 text-emerald-700':'bg-red-100 text-red-700'}">${u.status}</span>
+                    </td>
+                    <td class="p-4 border-b border-gray-100 text-gray-500 text-xs">${new Date(u.joined).toLocaleDateString()}</td>
+                </tr>
+            `).reverse().join('');
+
+            // Admins
+            if (data.admins) {
+                const admins = data.admins.slice(1);
+                document.getElementById('team-tbody').innerHTML = admins.map(a => `
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="p-4 border-b border-gray-100 font-medium text-gray-800">${a[0]}</td>
+                        <td class="p-4 border-b border-gray-100">
+                            <span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${a[2]==='Active'?'bg-brand-primary/20 text-brand-primary':'bg-red-100 text-red-700'}">${a[2]}</span>
+                        </td>
+                        <td class="p-4 border-b border-gray-100 text-gray-500 text-xs">${a[3] === 'Never' ? 'Never' : new Date(a[3]).toLocaleString()}</td>
+                    </tr>
+                `).join('');
+            }
+
+            // Logs & Chart
+            const logs = data.logs.slice(1);
+            document.getElementById('kpi-logs').innerText = logs.length;
+            
+            document.getElementById('logs-tbody').innerHTML = logs.map(l => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 border-b border-gray-100 text-xs text-gray-500 whitespace-nowrap">${new Date(l[0]).toLocaleString()}</td>
+                    <td class="p-4 border-b border-gray-100 text-gray-800 font-medium">${l[1]}</td>
+                    <td class="p-4 border-b border-gray-100 text-gray-600 text-sm">${l[2]}</td>
+                    <td class="p-4 border-b border-gray-100 text-brand-primary text-sm">${l[3]}</td>
+                </tr>
+            `).reverse().join(''); 
+
+            renderChart(logs);
+            lucide.createIcons();
+        }
+
+        function renderChart(logs) {
+            const counts = {};
+            logs.forEach(l => {
+                const dashName = l[1] || "Unknown";
+                counts[dashName] = (counts[dashName] || 0) + 1;
+            });
+
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        label: 'Total Activities',
+                        data: Object.values(counts),
+                        backgroundColor: '#8b84f4',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks:{ precision:0 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        async function createNewDashboard() {
+            const btn = document.getElementById('btn-create');
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+            
+            const customButtons = [];
+            document.querySelectorAll('.module-row').forEach(row => {
+                const title = row.querySelector('.mod-title').value.trim();
+                const url = row.querySelector('.mod-url').value.trim();
+                if(title && url) customButtons.push({ title: title, url: url, template: "custom" });
+            });
+
+            const payload = {
+                dashName: document.getElementById('new-name').value,
+                logoUrl: document.getElementById('new-logo').value,
+                highlightColor: document.getElementById('new-color').value,
+                sidebarBg: document.getElementById('new-sidebar').value,
+                stat1: document.getElementById('new-stat1').value,
+                stat2: document.getElementById('new-stat2').value,
+                stat3: document.getElementById('new-stat3').value,
+                buttons: customButtons
+            };
+
+            if(!payload.dashName) { alert("Name is required"); btn.innerHTML = 'Generate Secure Link'; return; }
+
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createDashboard', payload: payload }) });
+                await fetchData(); 
+                document.getElementById('create-modal').classList.add('hidden');
+                switchTab('dashboards');
+                document.getElementById('new-name').value = '';
+                document.getElementById('modules-container').innerHTML = '';
+            } catch (err) {
+                alert("Failed to create dashboard");
+            }
+            btn.innerHTML = 'Generate Secure Link';
+        }
+
+        // ------------------ TEMPLATES & MESSAGING LOGIC ------------------
+
+        function toggleSubjectField() {
+            const type = document.getElementById('tpl-channel').value;
+            const subjectContainer = document.getElementById('tpl-subject-container');
+            if (type === 'whatsapp') {
+                subjectContainer.classList.add('hidden');
+            } else {
+                subjectContainer.classList.remove('hidden');
+            }
+        }
+
+        function renderTemplates() {
+            document.getElementById('templates-tbody').innerHTML = globalTemplates.map(t => `
+                <tr class="hover:bg-gray-50 transition-colors">
+                    <td class="p-4 border-b border-gray-100 font-medium text-gray-800">${t.name}</td>
+                    <td class="p-4 border-b border-gray-100">
+                        <span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${t.channel === 'email' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}">
+                            <i data-lucide="${t.channel === 'email' ? 'mail' : 'message-circle'}" class="w-3 h-3 inline mr-1"></i>${t.channel}
+                        </span>
+                    </td>
+                    <td class="p-4 border-b border-gray-100 text-gray-600 text-xs">${t.channel === 'email' ? t.subject : '<span class="text-gray-400 italic">N/A (WhatsApp)</span>'}</td>
+                    <td class="p-4 border-b border-gray-100">
+                        <button class="text-indigo-600 hover:text-indigo-800 text-xs font-medium">Edit</button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+
+            // Populate send modal dropdown
+            const select = document.getElementById('send-template');
+            select.innerHTML = '<option value="">-- Select a template --</option>' + globalTemplates.map(t => `<option value="${t.id}">${t.name} (${t.channel})</option>`).join('');
+        }
+
+        function saveTemplate() {
+            const name = document.getElementById('tpl-name').value;
+            const channel = document.getElementById('tpl-channel').value;
+            const subject = document.getElementById('tpl-subject').value;
+            const body = document.getElementById('tpl-body').value;
+
+            if(!name || !body) return alert("Name and Body are required.");
+
+            // In a real scenario, POST to API_URL here. We update local array for UI response.
+            globalTemplates.push({ id: Date.now(), name, channel, subject, body });
+            
+            document.getElementById('tpl-name').value = '';
+            document.getElementById('tpl-body').value = '';
+            document.getElementById('template-modal').classList.add('hidden');
+            
+            renderTemplates();
+        }
+
+        function openSendModal() {
+            document.getElementById('send-modal').classList.remove('hidden');
+            clearSelectedClient();
+            document.getElementById('send-notification').className = 'hidden';
+            document.getElementById('send-template').value = '';
+        }
+
+        function closeSendModal() {
+            document.getElementById('send-modal').classList.add('hidden');
+        }
+
+        // Live Client Search
+        function filterClients() {
+            const query = document.getElementById('client-search').value.toLowerCase();
+            const dropdown = document.getElementById('client-dropdown');
+            
+            if (query.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const results = globalUsers.filter(u => 
+                `${u.firstName} ${u.lastName} ${u.email} ${u.dashboard}`.toLowerCase().includes(query)
+            ).slice(0, 5); // Limit to top 5
+
+            if (results.length > 0) {
+                dropdown.innerHTML = results.map(u => `
+                    <li class="px-4 py-3 hover:bg-brand-primary/10 cursor-pointer border-b border-gray-100 last:border-0 transition-colors" 
+                        onclick="selectClient('${u.id}', '${u.firstName}', '${u.lastName}', '${u.email}')">
+                        <div class="font-medium text-gray-800 text-sm">${u.firstName} ${u.lastName}</div>
+                        <div class="text-xs text-gray-500">${u.email} &bull; ${u.dashboard}</div>
+                    </li>
+                `).join('');
+                dropdown.classList.remove('hidden');
+            } else {
+                dropdown.innerHTML = '<li class="px-4 py-3 text-xs text-gray-500">No matching clients found.</li>';
+                dropdown.classList.remove('hidden');
+            }
+        }
+
+        function selectClient(id, fName, lName, email) {
+            selectedUserForMessage = { id, name: `${fName} ${lName}`, email };
+            
+            document.getElementById('client-search').value = '';
+            document.getElementById('client-dropdown').classList.add('hidden');
+            
+            // Show Box
+            document.getElementById('sel-client-name').innerText = selectedUserForMessage.name;
+            document.getElementById('sel-client-email').innerText = selectedUserForMessage.email;
+            document.getElementById('selected-client-box').classList.remove('hidden');
+            document.getElementById('client-search').parentElement.classList.add('hidden');
+            document.querySelector("label[for='client-search']")?.classList.add('hidden');
+        }
+
+        function clearSelectedClient() {
+            selectedUserForMessage = null;
+            document.getElementById('selected-client-box').classList.add('hidden');
+            document.getElementById('client-search').parentElement.classList.remove('hidden');
+        }
+
+        // Dispatch API Call to Backend
+        async function dispatchMessage() {
+            const tplId = document.getElementById('send-template').value;
+            const notifBox = document.getElementById('send-notification');
+            const btn = document.getElementById('btn-dispatch');
+
+            if (!selectedUserForMessage) {
+                notifBox.innerText = "Please search and select a client.";
+                notifBox.className = "p-3 rounded-xl text-sm font-medium text-center bg-red-50 text-red-600 block mb-4";
+                return;
+            }
+            if (!tplId) {
+                notifBox.innerText = "Please select a template.";
+                notifBox.className = "p-3 rounded-xl text-sm font-medium text-center bg-red-50 text-red-600 block mb-4";
+                return;
+            }
+
+            const template = globalTemplates.find(t => t.id == tplId);
+            
+            btn.innerHTML = '<i class="w-4 h-4 animate-spin mr-2" data-lucide="loader-2"></i> Sending...';
+            lucide.createIcons();
+
+            // Prepare API Payload for Apps Script
+            const payload = {
+                action: 'dispatchMessage',
+                channel: template.channel, // 'email' or 'whatsapp' -> GAS will process accordingly
+                recipientEmail: selectedUserForMessage.email,
+                recipientName: selectedUserForMessage.name,
+                subject: template.subject,
+                bodyTemplate: template.body
+            };
+
+            try {
+                // In production, uncomment the fetch call to execute on Apps Script:
+                /*
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                */
+
+                // Simulated delay for UI demo
+                await new Promise(r => setTimeout(r, 1200));
+
+                notifBox.innerText = `Success! ${template.channel === 'email' ? 'Email' : 'WhatsApp'} sent to ${selectedUserForMessage.name}.`;
+                notifBox.className = "p-3 rounded-xl text-sm font-medium text-center bg-emerald-50 text-emerald-700 block mb-4";
+                
+                setTimeout(() => {
+                    closeSendModal();
+                }, 2000);
+
+            } catch(e) {
+                notifBox.innerText = "Error dispatching message.";
+                notifBox.className = "p-3 rounded-xl text-sm font-medium text-center bg-red-50 text-red-600 block mb-4";
+            }
+
+            btn.innerHTML = '<i data-lucide="paperclip" class="w-4 h-4 mr-2"></i> Send Now';
+            lucide.createIcons();
+        }
+
+    </script>
+</body>
+</html>
