@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Master Admin | Dashboard Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        /* Search Dropdown styling */
+        .search-results { max-height: 200px; overflow-y: auto; }
+        
+        /* HTML Preview styling */
+        .html-preview-container { border: 1px solid #e2e8f0; border-radius: 0.75rem; overflow: hidden; background: white; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: '#8b84f4',
+                            highlight: '#e07cd0',
+                            bg: '#f1f0fb',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-brand-bg flex h-screen overflow-hidden text-gray-800 relative">
+
+    <!-- SECURE LOGIN OVERLAY -->
+    <div id="login-overlay" class="fixed inset-0 z-[999] bg-cover bg-center flex items-center justify-center p-4" style="background-image: url('https://bucket.mlcdn.com/a/3336/3336910/images/17b83bfbb8eda81d4cb5eb2ae8dbe506bd649401.png');">
+        <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md p-8 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-brand-highlight"></div>
+            <div class="flex items-center justify-center mb-1">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/d3c6b6924c38c54a075ce5e26c46be0f426c8779.png" alt="Bebell Logo" class="w-[150px] h-[150px] object-contain transition-all duration-300 transform hover:scale-110 hover:brightness-110 drop-shadow-md hover:drop-shadow-xl cursor-pointer">
+            </div>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Bebell Digital Solutions</h2>
+            <p class="text-center text-gray-500 mb-8 text-sm">Restricted Area. Authorized Access Only.</p>
+            
+            <div id="login-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl text-center font-medium"></div>
+
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Email</label>
+                    <input type="email" id="admin-email" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Password</label>
+                    <input type="password" id="admin-password" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-primary focus:border-brand-primary outline-none transition-all">
+                </div>
+                <button type="submit" id="btn-login" class="w-full mt-6 bg-brand-primary hover:opacity-90 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center">
+                    <span>Authenticate</span>
+                    <i data-lucide="log-in" class="w-5 h-5 ml-2" id="login-icon"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex shrink-0">
+        <!-- Brand Logo Header -->
+        <div class="h-24 flex items-center justify-center px-4 border-b border-white/10 shrink-0 bg-slate-950/50">
+            <img src="https://bucket.mlcdn.com/a/3336/3336910/images/d3c6b6924c38c54a075ce5e26c46be0f426c8779.png" 
+                 alt="Admin Logo" 
+                 class="max-h-14 object-contain transition-all duration-300 transform hover:scale-105 hover:brightness-110 drop-shadow-lg cursor-pointer">
+        </div>
+        
+        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+            <button onclick="switchTab('overview')" id="nav-overview" class="w-full flex items-center px-6 py-3 bg-brand-primary text-white border-l-4 border-brand-highlight transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3"></i> Overview
+            </button>
+            <button onclick="switchTab('campaigns')" id="nav-campaigns" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="megaphone" class="w-5 h-5 mr-3"></i> Campaigns
+            </button>
+            <button onclick="switchTab('templates')" id="nav-templates" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="file-text" class="w-5 h-5 mr-3"></i> HTML Templates
+            </button>
+            <button onclick="switchTab('users')" id="nav-users" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="users" class="w-5 h-5 mr-3"></i> Users
+            </button>
+            <button onclick="switchTab('dashboards')" id="nav-dashboards" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="monitor-smartphone" class="w-5 h-5 mr-3"></i> Dashboards
+            </button>
+            
+            <div class="px-6 py-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Resources</div>
+            <!-- MODULAR RESOURCE BUTTONS: Copy/Paste below to add more -->
+            <button onclick="openResource('Resources', 'https://elnegocio.digital')" id="nav-resource-demo" class="w-full flex items-center px-6 py-3 hover:bg-slate-800 hover:text-white border-l-4 border-transparent transition-colors">
+                <i data-lucide="globe" class="w-5 h-5 mr-3"></i> Digital Business
+            </button>
+        </nav>
+
+        <div class="p-6 border-t border-white/10 text-xs text-slate-500 flex justify-between items-center bg-slate-950/50">
+            <span>Secure Env v2.5</span>
+            <button onclick="logoutAdmin()" class="text-slate-400 hover:text-white" title="Logout"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+        
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-8 shrink-0">
+            <h2 id="header-title" class="text-2xl font-bold text-gray-800">System Overview</h2>
+            <div class="flex items-center space-x-3">
+                <!-- Notifications Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative p-2 bg-gray-50 text-gray-500 rounded-full hover:bg-gray-100 transition-colors">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span id="notif-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-brand-highlight border-2 border-white rounded-full hidden"></span>
+                    </button>
+                    <div id="notif-dropdown" class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[60] hidden overflow-hidden">
+                        <div class="p-4 border-b border-gray-50 flex justify-between items-center">
+                            <span class="font-bold text-gray-800">Reminders & Notifications</span>
+                            <button onclick="clearNotifications()" class="text-[10px] text-brand-primary font-bold hover:underline">Clear All</button>
+                        </div>
+                        <div id="notif-list" class="max-h-64 overflow-y-auto divide-y divide-gray-50">
+                            <div class="p-4 text-center text-gray-400 text-sm italic">No active reminders.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="openCampaignModal()" class="flex items-center px-4 py-2 bg-brand-primary text-white rounded-lg hover:opacity-90 transition-colors text-sm font-medium shadow-sm">
+                    <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i> New Campaign
+                </button>
+                <button onclick="fetchData()" class="flex items-center px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-lg hover:bg-brand-primary/20 transition-colors text-sm font-medium border border-brand-primary/20">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2" id="refresh-icon"></i> Sync
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Loader -->
+        <div id="main-loader" class="absolute inset-0 top-20 bg-brand-bg/80 backdrop-blur-sm z-40 flex flex-col items-center justify-center hidden">
+            <i data-lucide="loader-2" class="w-10 h-10 text-brand-highlight animate-spin mb-4"></i>
+            <p class="text-gray-600 font-medium bg-white px-4 py-2 rounded-full shadow-sm">Connecting to backend...</p>
+        </div>
+
+        <div class="flex-1 overflow-auto p-8 relative" id="content-area">
+            
+            <!-- OVERVIEW TAB -->
+            <div id="tab-overview" class="tab-content active space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center mb-4"><i data-lucide="send" class="w-5 h-5"></i></div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Scheduled</p>
+                        <h3 id="kpi-scheduled" class="text-2xl font-bold text-gray-800">0</h3>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Sent Total</p>
+                        <h3 id="kpi-sent" class="text-2xl font-bold text-gray-800">0</h3>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div class="w-10 h-10 rounded-lg bg-purple-50 text-purple-500 flex items-center justify-center mb-4"><i data-lucide="users" class="w-5 h-5"></i></div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Users</p>
+                        <h3 id="kpi-users" class="text-2xl font-bold text-gray-800">-</h3>
+                    </div>
+                    <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+                        <div class="w-10 h-10 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center mb-4"><i data-lucide="clock" class="w-5 h-5"></i></div>
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Avg. Time</p>
+                        <h3 class="text-2xl font-bold text-gray-800">2.4m</h3>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">Traffic Insights</h3>
+                    <div class="h-80 w-full"><canvas id="activityChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- CAMPAIGNS TAB -->
+            <div id="tab-campaigns" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-500">Manage and schedule messaging campaigns.</p>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-bold border-b">
+                            <tr>
+                                <th class="p-4">Campaign Name</th>
+                                <th class="p-4">Channel</th>
+                                <th class="p-4">Schedule</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Reach</th>
+                            </tr>
+                        </thead>
+                        <tbody id="campaigns-tbody" class="text-sm divide-y">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TEMPLATES TAB -->
+            <div id="tab-templates" class="tab-content">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-gray-500">Design HTML email and WhatsApp templates.</p>
+                    <button onclick="openTemplateModal()" class="bg-brand-primary text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm">Add New Template</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="templates-grid">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <!-- USERS TAB -->
+            <div id="tab-users" class="tab-content">
+                <div class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase font-bold border-b">
+                            <tr>
+                                <th class="p-4">User</th>
+                                <th class="p-4">Dashboard</th>
+                                <th class="p-4">Role</th>
+                                <th class="p-4">Status</th>
+                                <th class="p-4">Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody" class="text-sm divide-y"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- DASHBOARDS TAB -->
+            <div id="tab-dashboards" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboards-grid">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <!-- IFRAME VIEWER TAB -->
+            <div id="tab-resource-viewer" class="tab-content h-full">
+                <div class="h-full bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden relative">
+                    <div id="iframe-loader" class="absolute inset-0 flex items-center justify-center bg-white z-10 hidden">
+                        <i data-lucide="loader-2" class="w-8 h-8 text-brand-primary animate-spin"></i>
+                    </div>
+                    <iframe id="resource-iframe" src="" class="w-full h-full border-0" onload="document.getElementById('iframe-loader').classList.add('hidden')"></iframe>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- CAMPAIGN MODAL -->
+    <div id="campaign-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden">
+            <div class="px-8 py-6 bg-gray-50 border-b flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">Launch New Campaign</h3>
+                <button onclick="closeCampaignModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="p-8 space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Campaign Name</label>
+                        <input type="text" id="camp-name" class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-brand-primary outline-none" placeholder="e.g. Q4 Growth Campaign">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Channel</label>
+                        <select id="camp-channel" class="w-full px-4 py-3 border rounded-xl bg-white">
+                            <option value="email">Email (HTML)</option>
+                            <option value="whatsapp">WhatsApp (WBiz)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Target Audience</label>
+                        <select id="camp-audience" class="w-full px-4 py-3 border rounded-xl bg-white">
+                            <option value="all">All Registered Users</option>
+                            <option value="active">Active Only</option>
+                            <option value="leads">Unconverted Leads</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Schedule Date</label>
+                        <input type="date" id="camp-date" class="w-full px-4 py-3 border rounded-xl bg-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Schedule Time</label>
+                        <input type="time" id="camp-time" class="w-full px-4 py-3 border rounded-xl bg-white">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Select Template</label>
+                        <select id="camp-template" class="w-full px-4 py-3 border rounded-xl bg-white">
+                            <option value="">-- Choose saved template --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="p-8 bg-gray-50 border-t flex justify-end space-x-4">
+                <button onclick="closeCampaignModal()" class="px-6 py-3 text-gray-500 font-bold hover:text-gray-800">Cancel</button>
+                <button onclick="saveCampaign()" class="px-10 py-3 bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90 transition-all">Create Campaign</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATE MODAL (HTML SUPPORT) -->
+    <div id="template-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col overflow-hidden">
+            <div class="px-8 py-6 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                <h3 class="text-xl font-bold text-gray-800">Template Editor</h3>
+                <button onclick="closeTemplateModal()" class="text-gray-400 hover:text-gray-600"><i data-lucide="x" class="w-6 h-6"></i></button>
+            </div>
+            <div class="flex-1 flex overflow-hidden">
+                <!-- Editor Side -->
+                <div class="w-1/2 p-6 border-r overflow-y-auto space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
+                        <input type="text" id="tpl-name" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-brand-primary">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Email Subject</label>
+                        <input type="text" id="tpl-subject" class="w-full px-3 py-2 border rounded-lg outline-none focus:ring-2 focus:ring-brand-primary">
+                    </div>
+                    <div class="h-full">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">HTML Code / Content</label>
+                        <textarea id="tpl-body" class="w-full h-96 p-3 font-mono text-sm border rounded-lg bg-gray-50 focus:ring-2 focus:ring-brand-primary outline-none" placeholder="Enter HTML or plain text here... Use {{name}} for dynamic names."></textarea>
+                    </div>
+                </div>
+                <!-- Preview Side -->
+                <div class="w-1/2 p-6 bg-gray-100 flex flex-col">
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Live Preview</label>
+                        <span class="text-[10px] text-gray-400">Updates as you type</span>
+                    </div>
+                    <div class="flex-1 bg-white rounded-xl shadow-inner border overflow-hidden">
+                        <iframe id="html-live-preview" class="w-full h-full border-0 bg-white"></iframe>
+                    </div>
+                </div>
+            </div>
+            <div class="px-8 py-6 bg-gray-50 border-t flex justify-end shrink-0">
+                <button onclick="saveFullTemplate()" class="px-10 py-3 bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:opacity-90">Save Template</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwYOUR_APP_SCRIPT_ID/exec";
+        let globalData = {
+            users: [],
+            campaigns: [
+                { id: 1, name: "Autumn Newsletter", channel: "Email", schedule: "2023-11-15 10:00", status: "Sent", reach: "1.2k" },
+                { id: 2, name: "Black Friday Push", channel: "WhatsApp", schedule: "2023-11-24 09:00", status: "Scheduled", reach: "850" }
+            ],
+            templates: [
+                { id: 1, name: "Default Welcome", type: "email", subject: "Welcome to Bebell!", body: "<h1>Hi {{name}},</h1><p>Welcome to our professional network.</p>" }
+            ],
+            notifications: [
+                { id: 1, type: "reminder", message: "Schedule Black Friday Campaign", time: "2 hours ago" },
+                { id: 2, type: "success", message: "Autumn Newsletter Sent", time: "1 day ago" }
+            ]
+        };
+        let chartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            lucide.createIcons();
+            if (sessionStorage.getItem("admin_auth") === "true") {
+                document.getElementById("login-overlay").classList.add("hidden");
+                fetchData();
+            }
+            
+            // Setup live preview listener
+            document.getElementById('tpl-body').addEventListener('input', updateLivePreview);
+        });
+
+        // ------------------ TAB LOGIC & RESOURCE MODULARITY ------------------
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            
+            // Sidebar buttons highlight
+            document.querySelectorAll('nav button').forEach(el => {
+                el.classList.remove('bg-brand-primary', 'text-white', 'border-brand-highlight');
+                el.classList.add('hover:bg-slate-800', 'hover:text-white', 'border-transparent', 'text-slate-300');
+            });
+            
+            const titles = { 
+                'overview': 'System Overview', 'campaigns': 'Messaging Campaigns', 
+                'templates': 'HTML Email Templates', 'users': 'User Management', 
+                'dashboards': 'Dashboards Config', 'resource-viewer': 'External Resource' 
+            };
+            document.getElementById('header-title').innerText = titles[tabId] || 'Panel';
+            lucide.createIcons();
+        }
+
+        // Modular Sidebar Logic for copying buttons
+        function openResource(name, url) {
+            const iframe = document.getElementById('resource-iframe');
+            const loader = document.getElementById('iframe-loader');
+            
+            loader.classList.remove('hidden');
+            iframe.src = url;
+            
+            switchTab('resource-viewer');
+            document.getElementById('header-title').innerText = name;
+        }
+
+        // ------------------ DATA SYNC ------------------
+        async function fetchData() {
+            document.getElementById('main-loader').classList.remove('hidden');
+            document.getElementById('refresh-icon').classList.add('animate-spin');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'getAdminData' })
+                });
+                const result = await response.json();
+                if(result.success) {
+                    globalData.users = result.data.users.slice(1);
+                    renderAll();
+                }
+            } catch (err) {
+                console.error("Backend Error", err);
+                // For demo if backend isn't set up yet
+                renderAll();
+            }
+            
+            document.getElementById('main-loader').classList.add('hidden');
+            document.getElementById('refresh-icon').classList.remove('animate-spin');
+        }
+
+        function renderAll() {
+            renderCampaigns();
+            renderTemplates();
+            renderUsers();
+            renderNotifications();
+            renderChart();
+            
+            document.getElementById('kpi-users').innerText = globalData.users.length;
+            document.getElementById('kpi-sent').innerText = globalData.campaigns.filter(c => c.status === 'Sent').length;
+            document.getElementById('kpi-scheduled').innerText = globalData.campaigns.filter(c => c.status === 'Scheduled').length;
+        }
+
+        function renderCampaigns() {
+            document.getElementById('campaigns-tbody').innerHTML = globalData.campaigns.map(c => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4 font-bold text-gray-800">${c.name}</td>
+                    <td class="p-4"><span class="text-xs px-2 py-1 rounded bg-gray-100 font-bold">${c.channel}</span></td>
+                    <td class="p-4 text-xs text-gray-500">${c.schedule}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 text-[10px] uppercase font-bold rounded-full ${c.status==='Sent'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">${c.status}</span>
+                    </td>
+                    <td class="p-4 font-mono font-bold text-brand-primary">${c.reach}</td>
+                </tr>
+            `).reverse().join('');
+        }
+
+        function renderTemplates() {
+            const grid = document.getElementById('templates-grid');
+            grid.innerHTML = globalData.templates.map(t => `
+                <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-10 h-10 bg-indigo-50 text-indigo-500 rounded-lg flex items-center justify-center"><i data-lucide="layout"></i></div>
+                        <span class="text-[10px] font-bold uppercase text-gray-400">${t.type}</span>
+                    </div>
+                    <h4 class="font-bold text-gray-800 mb-1">${t.name}</h4>
+                    <p class="text-xs text-gray-500 mb-4 line-clamp-2">${t.subject}</p>
+                    <button class="w-full py-2 text-xs font-bold text-brand-primary bg-brand-primary/10 rounded-lg">Edit Template</button>
+                </div>
+            `).join('');
+            
+            // Populate campaign dropdown
+            document.getElementById('camp-template').innerHTML = '<option value="">-- Choose saved template --</option>' + 
+                globalData.templates.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+            
+            lucide.createIcons();
+        }
+
+        function renderUsers() {
+            document.getElementById('users-tbody').innerHTML = globalData.users.map(u => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4"><p class="font-bold text-gray-800">${u[2]} ${u[3]}</p><p class="text-[10px] text-gray-400">${u[4]}</p></td>
+                    <td class="p-4 text-xs">${u[1]}</td>
+                    <td class="p-4 text-xs">${u[5]}</td>
+                    <td class="p-4"><span class="px-2 py-1 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600">Active</span></td>
+                    <td class="p-4 text-[10px] text-gray-400">${new Date(u[8]).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderNotifications() {
+            const list = document.getElementById('notif-list');
+            if(globalData.notifications.length > 0) {
+                document.getElementById('notif-badge').classList.remove('hidden');
+                list.innerHTML = globalData.notifications.map(n => `
+                    <div class="p-4 hover:bg-gray-50 flex items-start space-x-3 transition-colors cursor-pointer">
+                        <div class="w-8 h-8 shrink-0 rounded-full ${n.type==='reminder'?'bg-amber-50 text-amber-500':'bg-emerald-50 text-emerald-500'} flex items-center justify-center">
+                            <i data-lucide="${n.type==='reminder'?'bell':'check'}" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800">${n.message}</p>
+                            <span class="text-[10px] text-gray-400 font-medium">${n.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('notif-badge').classList.add('hidden');
+                list.innerHTML = '<div class="p-8 text-center text-gray-400 text-sm italic">No active reminders.</div>';
+            }
+            lucide.createIcons();
+        }
+
+        // ------------------ CAMPAIGN & TEMPLATE ACTIONS ------------------
+        function openCampaignModal() { document.getElementById('campaign-modal').classList.remove('hidden'); }
+        function closeCampaignModal() { document.getElementById('campaign-modal').classList.add('hidden'); }
+        function openTemplateModal() { document.getElementById('template-modal').classList.remove('hidden'); updateLivePreview(); }
+        function closeTemplateModal() { document.getElementById('template-modal').classList.add('hidden'); }
+
+        function updateLivePreview() {
+            const body = document.getElementById('tpl-body').value;
+            const previewFrame = document.getElementById('html-live-preview');
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            doc.open();
+            doc.write(body || "<p style='color:#94a3b8; font-family:sans-serif; padding:20px; text-align:center;'>Template preview will appear here...</p>");
+            doc.close();
+        }
+
+        async function saveFullTemplate() {
+            const tpl = {
+                id: Date.now(),
+                name: document.getElementById('tpl-name').value,
+                subject: document.getElementById('tpl-subject').value,
+                body: document.getElementById('tpl-body').value,
+                type: 'email'
+            };
+            
+            if(!tpl.name || !tpl.body) return alert("Please fill Name and Content.");
+            
+            globalData.templates.push(tpl);
+            renderTemplates();
+            closeTemplateModal();
+            
+            // Backend Call
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveTemplate', payload: tpl }) });
+        }
+
+        async function saveCampaign() {
+            const camp = {
+                id: Date.now(),
+                name: document.getElementById('camp-name').value,
+                channel: document.getElementById('camp-channel').value,
+                audience: document.getElementById('camp-audience').value,
+                schedule: `${document.getElementById('camp-date').value} ${document.getElementById('camp-time').value}`,
+                templateId: document.getElementById('camp-template').value,
+                status: 'Scheduled',
+                reach: '0'
+            };
+
+            if(!camp.name || !camp.schedule) return alert("Please fill Name and Schedule.");
+            
+            globalData.campaigns.push(camp);
+            renderCampaigns();
+            closeCampaignModal();
+            
+            // Backend Call
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'createCampaign', payload: camp }) });
+        }
+
+        function toggleNotifications() {
+            const d = document.getElementById('notif-dropdown');
+            d.classList.toggle('hidden');
+        }
+
+        function clearNotifications() {
+            globalData.notifications = [];
+            renderNotifications();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Interactions',
+                        data: [65, 59, 80, 81, 56, 55, 40],
+                        borderColor: '#8b84f4',
+                        backgroundColor: 'rgba(139, 132, 244, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#f1f0fb' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        // Login Logic
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("btn-login");
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
+
+            const email = document.getElementById("admin-email").value;
+            const password = document.getElementById("admin-password").value;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'adminLogin', email, password })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    sessionStorage.setItem("admin_auth", "true");
+                    document.getElementById("login-overlay").classList.add("hidden");
+                    fetchData();
+                } else {
+                    document.getElementById("login-error").innerText = "Invalid credentials";
+                    document.getElementById("login-error").classList.remove("hidden");
+                }
+            } catch (err) {
+                // Demo bypass
+                sessionStorage.setItem("admin_auth", "true");
+                document.getElementById("login-overlay").classList.add("hidden");
+                fetchData();
+            }
+            btn.innerHTML = '<span>Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>';
+            lucide.createIcons();
+        });
+
+        function logoutAdmin() {
+            sessionStorage.removeItem("admin_auth");
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
