@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,13 +15,12 @@
 
 
 
-
-
     <!-- Favicon -->
     <link rel="icon" href="https://bucket.mlcdn.com/a/3336/3336910/images/f33cef0fa8aab68e4c967bc10f39c9a3717a49cf.png">
 
 
-  
+
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -85,6 +86,7 @@
             <img src="https://bucket.mlcdn.com/a/3336/3336910/images/f33cef0fa8aab68e4c967bc10f39c9a3717a49cf.png" alt="Logo" class="w-[150px] h-[150px] object-contain transition-all duration-300 transform hover:scale-105 cursor-pointer">
         </div>
         
+        <!-- Global Search Bar -->
         <div class="px-6 py-4 shrink-0">
             <div class="relative">
                 <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50"></i>
@@ -163,10 +165,13 @@
         <header class="h-20 bg-white border-b flex items-center justify-between px-8 shrink-0">
             <h2 id="header-title" class="text-2xl font-bold text-gray-800 data-i18n" data-en="Overview" data-es="Resumen">Overview</h2>
             <div class="flex items-center space-x-3">
+                <!-- Top Right Real-Time System Badge -->
                 <div id="system-status-container" class="flex items-center space-x-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-full transition-colors w-max">
                     <div id="system-status-dot" class="w-2 h-2 rounded-full bg-gray-400 status-pulse"></div>
                     <span id="system-status-label" class="text-[10px] font-bold uppercase tracking-tight text-gray-600 data-i18n" data-en="Connecting..." data-es="Conectando...">Connecting...</span>
                 </div>
+
+                <!-- Translation Button - Icon Only -->
                 <button onclick="toggleLanguage()" class="p-2 bg-gray-100 text-gray-700 rounded-lg border hover:bg-gray-200 transition-colors">
                     <i data-lucide="languages" class="w-5 h-5 text-brand-primary"></i>
                 </button>
@@ -1006,18 +1011,19 @@
             btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
             lucide.createIcons();
 
-            try {
-                if (email === "bebell.digitalsolutions@gmail.com" && password === "Bebell/25") {
-                    const userObj = { email, username: "Main Admin", avatar: "", role: "Master Admin", lang: currentLang };
-                    saveAuthSession(userObj, rememberMe);
-                    
-                    btn.innerHTML = `<span class="data-i18n" data-en="Authenticate" data-es="Autenticar">Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>`;
-                    lucide.createIcons(); applyLanguage();
-                    
-                    fetchData();
-                    return;
-                }
+            // ⚠️ PRODUCTION WARNING: Remove this hardcoded demo bypass before final deployment! ⚠️
+            if (email === "bebell.digitalsolutions@gmail.com" && password === "Bebell/25") {
+                const userObj = { email, username: "Main Admin", avatar: "", role: "Master Admin", lang: currentLang };
+                saveAuthSession(userObj, rememberMe);
+                
+                btn.innerHTML = `<span class="data-i18n" data-en="Authenticate" data-es="Autenticar">Authenticate</span><i data-lucide="log-in" class="w-5 h-5 ml-2"></i>`;
+                lucide.createIcons(); applyLanguage();
+                
+                fetchData();
+                return;
+            }
 
+            try {
                 const result = await apiPost('adminLogin', { email, password });
                 if (result.success) {
                     saveAuthSession(result.user, rememberMe);
@@ -1067,30 +1073,47 @@
         function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
 
         async function saveProfile() {
-            const user = JSON.parse(sessionStorage.getItem("admin_user_data") || localStorage.getItem("admin_user_data"));
-            const payload = { username: document.getElementById('prof-username').value, password: document.getElementById('prof-password').value, lang: document.getElementById('prof-lang').value, avatarB64: document.getElementById('prof-avatar-b64').value };
-            const res = await apiPost('updateProfile', { email: user.email, payload });
-            
-            if(res.success) { 
-                if(res.newAvatar) user.avatar = res.newAvatar; 
-                else if(payload.avatarB64) user.avatar = payload.avatarB64; 
-                
-                user.username = payload.username; 
-                sessionStorage.setItem("admin_user_data", JSON.stringify(user)); 
-                
-                if (localStorage.getItem("admin_auth") === "true") {
-                    localStorage.setItem("admin_user_data", JSON.stringify(user));
-                }
-                if (user.avatar && user.avatar.startsWith('data:image')) {
-                    localStorage.setItem("offline_avatar_backup", user.avatar);
-                }
+            const btn = document.getElementById('btn-save-profile');
+            const originalText = btn.innerText;
+            btn.innerHTML = '<i class="w-5 h-5 animate-spin" data-lucide="loader-2"></i>';
+            lucide.createIcons();
 
-                currentLang = payload.lang; 
-                updateUIForUser(user); 
-                applyLanguage(); 
-                closeProfileModal(); 
+            try {
+                const user = JSON.parse(sessionStorage.getItem("admin_user_data") || localStorage.getItem("admin_user_data"));
+                const payload = { username: document.getElementById('prof-username').value, password: document.getElementById('prof-password').value, lang: document.getElementById('prof-lang').value, avatarB64: document.getElementById('prof-avatar-b64').value };
+                
+                let res;
+                try {
+                    res = await apiPost('updateProfile', { email: user.email, payload });
+                } catch(e) {
+                    console.warn("Backend unavailable. Running profile save in demo fallback.");
+                    res = { success: true };
+                }
+                
+                if(res.success) { 
+                    if(res.newAvatar) user.avatar = res.newAvatar; 
+                    else if(payload.avatarB64) user.avatar = payload.avatarB64; 
+                    
+                    user.username = payload.username; 
+                    sessionStorage.setItem("admin_user_data", JSON.stringify(user)); 
+                    
+                    if (localStorage.getItem("admin_auth") === "true") {
+                        localStorage.setItem("admin_user_data", JSON.stringify(user));
+                    }
+                    if (user.avatar && user.avatar.startsWith('data:image')) {
+                        localStorage.setItem("offline_avatar_backup", user.avatar);
+                    }
+
+                    currentLang = payload.lang; 
+                    updateUIForUser(user); 
+                    applyLanguage(); 
+                    closeProfileModal(); 
+                }
+                else { alert("Failed to save profile on backend."); }
+            } finally {
+                btn.innerHTML = originalText;
+                applyLanguage();
             }
-            else { alert("Failed to save profile on backend. Running in demo fallback."); }
         }
 
         // ------------------ WA FORMAT & MEDIA ------------------
