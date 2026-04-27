@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Funnel - Bebell Digital Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { primary: '#8b84f4', highlight: '#e07cd0', bg: '#f1f0fb' }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Styles */
+        body { 
+            background-color: #f1f0fb; 
+            font-family: 'Segoe UI', system-ui, sans-serif; 
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden;
+        }
+        
+        /* 3D Glassmorphism Header */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(139, 132, 244, 0.1);
+            border-radius: 1.5rem;
+        }
+
+        /* 3D Matte Card Style */
+        .kanban-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid #eef0f7;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kanban-card:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 15px 25px -5px rgba(139, 132, 244, 0.2);
+            border-color: #8b84f4;
+        }
+
+        .kanban-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 5px; height: 100%;
+            background: var(--tag-color, #8b84f4);
+        }
+
+        /* Horizontal Scroll & Track Styling */
+        .kanban-container {
+            display: flex;
+            gap: 1.25rem;
+            padding: 0.5rem;
+            height: 100%;
+            overflow-x: auto; /* Horizontal scroll enabled */
+            overflow-y: hidden;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Custom Scrollbar for the Board */
+        .kanban-container::-webkit-scrollbar {
+            height: 10px;
+        }
+        .kanban-container::-webkit-scrollbar-track {
+            background: rgba(139, 132, 244, 0.05);
+            border-radius: 10px;
+            margin: 0 20px;
+        }
+        .kanban-container::-webkit-scrollbar-thumb {
+            background: #8b84f4;
+            border-radius: 10px;
+            border: 2px solid #f1f0fb;
+        }
+        .kanban-container::-webkit-scrollbar-thumb:hover {
+            background: #e07cd0;
+        }
+
+        /* Column Styling */
+        .kanban-column {
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 1.5rem;
+            min-height: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+            transition: background 0.2s;
+        }
+
+        .sortable-ghost { opacity: 0.2; transform: scale(0.9); border: 2px dashed #8b84f4; }
+        .sortable-drag { cursor: grabbing; opacity: 1 !important; transform: rotate(2deg); }
+
+        .glossy-btn {
+            background: linear-gradient(135deg, #8b84f4 0%, #7a72e0 100%);
+            box-shadow: 0 4px 12px rgba(139, 132, 244, 0.3);
+            color: white;
+            transition: 0.2s;
+        }
+
+        .glossy-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        /* Modal pop animation */
+        .modal-active { display: flex !important; animation: fadeIn 0.2s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Navbar -->
+    <nav class="glass-panel px-6 py-4 mb-6 flex flex-col md:flex-row justify-between items-center shrink-0 gap-4">
+        <div class="flex items-center gap-4">
+            <!-- Updated Logo Image -->
+            <img src="https://bucket.mlcdn.com/a/3336/3336910/images/c79f591531d936d4d6eaf04c948637e894564d9e.png" 
+                 alt="Bebell Logo" 
+                 class="h-12 w-auto drop-shadow-sm"
+                 onerror="this.style.display='none'">
+            <div>
+                <h1 class="text-2xl font-black text-slate-800 leading-none">
+                    Sales Funnel <span class="text-brand-highlight">CRM</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest font-bold mt-1">Real-time Dashboard Management</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <div id="sync-indicator" class="flex items-center gap-2 px-3 py-1 bg-white rounded-full border border-slate-100 text-[11px] font-bold text-slate-500">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                SYSTEM ACTIVE
+            </div>
+            <button onclick="loadBoardData()" class="glossy-btn px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider">
+                <i class="fa-solid fa-arrows-rotate mr-2"></i> Update
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Board Area -->
+    <main class="flex-1 overflow-hidden relative">
+        <div id="board-target" class="kanban-container">
+            <!-- Columns will be injected here via JavaScript -->
+        </div>
+    </main>
+
+    <!-- Details Modal Overlay -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden z-50 items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-lg bg-white p-8 relative shadow-2xl">
+            <button onclick="closeModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
+                <i class="fa-solid fa-circle-xmark text-2xl"></i>
+            </button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Templates -->
+    <script type="text/template" id="col-template">
+        <div class="w-80 min-w-[320px] shrink-0 flex flex-col h-full">
+            <div class="flex items-center justify-between mb-4 px-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full shadow-sm" style="background: {color}"></div>
+                    <h2 class="font-black text-slate-700 text-sm uppercase tracking-tight">{name}</h2>
+                </div>
+                <span id="count-{id}" class="bg-white text-slate-800 text-[11px] font-black px-2.5 py-1 rounded-lg border border-slate-100 shadow-sm">0</span>
+            </div>
+            <div id="col-{id}" data-status="{name}" class="kanban-column flex-1 p-3 space-y-4 overflow-y-auto">
+                <!-- Cards appear here -->
+            </div>
+        </div>
+    </script>
+
+    <script>
+        // API CONFIGURATION
+        const API_URL = "https://script.google.com/macros/s/YOUR_ACTUAL_APP_SCRIPT_ID/exec";
+        const boardData = {};
+        
+        // Funnel Stages Definition
+        const stages = [
+            { id: 'pending', name: 'Pending', color: '#94a3b8' },
+            { id: 'created', name: 'Dashboard Created', color: '#60a5fa' },
+            { id: 'deployed', name: 'Deployed', color: '#8b84f4' },
+            { id: 'contacted', name: 'Contacted', color: '#f59e0b' },
+            { id: 'approved', name: 'Approved', color: '#10b981' },
+            { id: 'canceled', name: 'Canceled', color: '#ef4444' }
+        ];
+
+        // Initialize UI Framework
+        function initBoard() {
+            const target = document.getElementById('board-target');
+            const template = document.getElementById('col-template').innerHTML;
+            
+            stages.forEach(s => {
+                let colHtml = template
+                    .replace(/{id}/g, s.id)
+                    .replace(/{name}/g, s.name)
+                    .replace(/{color}/g, s.color);
+                
+                target.insertAdjacentHTML('beforeend', colHtml);
+
+                new Sortable(document.getElementById(`col-${s.id}`), {
+                    group: 'funnel',
+                    animation: 250,
+                    easing: "cubic-bezier(1, 0, 0, 1)",
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    onEnd: (e) => handleMove(e)
+                });
+            });
+        }
+
+        async function loadBoardData() {
+            setSyncStatus("UPDATING", "bg-amber-500");
+            try {
+                const response = await fetch(API_URL, { 
+                    method: 'POST', 
+                    body: JSON.stringify({ action: 'getAdminData' }) 
+                });
+                const res = await response.json();
+                if(res.success) {
+                    renderCards(res.data.config);
+                    setSyncStatus("SYSTEM ACTIVE", "bg-green-500");
+                }
+            } catch (e) { 
+                console.error("Sync Error", e);
+                setSyncStatus("OFFLINE", "bg-red-500");
+            }
+        }
+
+        function renderCards(rows) {
+            stages.forEach(s => document.getElementById(`col-${s.id}`).innerHTML = '');
+            const counts = {};
+
+            // Start i=1 to skip header row in Sheets
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const uid = row[0];
+                const name = row[1];
+                const url = row[10];
+                const status = row[12] || 'Pending'; // Column M
+                const history = JSON.parse(row[13] || '[]'); // Column N
+                
+                boardData[uid] = { uid, name, url, history, status };
+                
+                const stage = stages.find(s => s.name === status) || stages[0];
+                counts[stage.id] = (counts[stage.id] || 0) + 1;
+
+                const card = `
+                    <div class="kanban-card p-5" data-uid="${uid}" style="--tag-color: ${stage.color}" onclick="showDetails('${uid}')">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="w-8 h-8 rounded-lg bg-brand-bg flex items-center justify-center text-brand-primary text-xs font-black">
+                                ${name.substring(0,2).toUpperCase()}
+                            </div>
+                            <span class="text-[9px] font-bold text-slate-300">#${uid.substring(0,6)}</span>
+                        </div>
+                        <h3 class="font-black text-slate-800 text-sm leading-tight mb-2 uppercase tracking-tight">${name}</h3>
+                        <div class="flex items-center gap-2 text-slate-400">
+                             <i class="fa-regular fa-calendar-check text-[10px]"></i>
+                             <span class="text-[10px] font-bold">${formatDate(history)}</span>
+                        </div>
+                    </div>
+                `;
+                document.getElementById(`col-${stage.id}`).insertAdjacentHTML('beforeend', card);
+            }
+
+            stages.forEach(s => document.getElementById(`count-${s.id}`).innerText = counts[s.id] || 0);
+        }
+
+        async function handleMove(evt) {
+            const uid = evt.item.getAttribute('data-uid');
+            const newStatus = evt.to.getAttribute('data-status');
+            const now = new Date().toISOString();
+
+            // Visual immediate update
+            const stage = stages.find(s => s.name === newStatus);
+            evt.item.style.setProperty('--tag-color', stage.color);
+            
+            setSyncStatus("SAVING...", "bg-brand-primary animate-pulse");
+
+            try {
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        action: 'updateKanbanState', 
+                        uid, 
+                        status: newStatus, 
+                        timestamp: now 
+                    })
+                });
+                
+                // Update local memory
+                boardData[uid].status = newStatus;
+                boardData[uid].history.push({ status: newStatus, time: now });
+                updateCounterUI();
+                setSyncStatus("SAVED", "bg-green-500");
+                setTimeout(() => setSyncStatus("SYSTEM ACTIVE", "bg-green-500"), 2000);
+            } catch (e) { 
+                console.error("Move update failed", e); 
+                setSyncStatus("SAVE ERROR", "bg-red-500");
+            }
+        }
+
+        function showDetails(uid) {
+            const d = boardData[uid];
+            const historyHtml = d.history.slice().reverse().map(h => `
+                <div class="flex gap-4 mb-4 relative">
+                    <div class="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 bg-brand-primary shadow-[0_0_8px_#8b84f4]"></div>
+                    <div>
+                        <p class="text-xs font-black text-slate-700 uppercase tracking-wider">${h.status}</p>
+                        <p class="text-[10px] text-slate-400 font-bold">${new Date(h.time).toLocaleString()}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-14 h-14 rounded-2xl bg-brand-bg flex items-center justify-center text-brand-primary text-xl font-black">
+                        ${d.name.substring(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800 leading-none">${d.name}</h2>
+                        <p class="text-xs text-brand-primary font-black mt-1 uppercase tracking-widest">${d.status}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-4">Journey History</p>
+                        <div class="max-h-56 overflow-y-auto pr-2 custom-scrollbar">${historyHtml}</div>
+                    </div>
+                    
+                    <div class="flex gap-3">
+                        <a href="${d.url}" target="_blank" class="flex-1 glossy-btn text-center py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-eye"></i> View Live
+                        </a>
+                        <button onclick="closeModal()" class="px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('modal-active');
+        }
+
+        function closeModal() { document.getElementById('modal').classList.remove('modal-active'); }
+        
+        function updateCounterUI() {
+            stages.forEach(s => {
+                const count = document.getElementById(`col-${s.id}`).children.length;
+                document.getElementById(`count-${s.id}`).innerText = count;
+            });
+        }
+
+        function setSyncStatus(text, colorClass) {
+            const indicator = document.getElementById('sync-indicator');
+            indicator.innerHTML = `<span class="w-2 h-2 rounded-full ${colorClass} ${text.includes('...') ? 'animate-pulse' : ''}"></span> ${text}`;
+        }
+
+        function formatDate(history) {
+            if(!history || history.length === 0) return "Just now";
+            const last = new Date(history[history.length - 1].time);
+            return last.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Initialize Board on Window Load
+        window.onload = () => { 
+            initBoard(); 
+            loadBoardData(); 
+        };
+    </script>
+</body>
+</html>
