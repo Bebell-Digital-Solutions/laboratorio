@@ -1,3 +1,8 @@
+
+
+ 
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,24 +11,15 @@
     <title>CRM Funnel - Bebell Digital Solutions</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 
 
-
-
-
-
-    <!-- Favicon -->
+   <!-- Favicon -->
     <link rel="icon" href="https://cdn.shopify.com/s/files/1/0242/0175/6777/files/Logo_Bebell_-_1.gif?v=1777150054">
 
 
-
-
-
-
-  
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    
     <script>
         tailwind.config = {
             theme: {
@@ -70,7 +66,7 @@
 
         .kanban-card:hover {
             transform: translateY(-3px) scale(1.01);
-            box-shadow: 0 15px 25px -5px rgba(139, 132, 244, 0.2);
+            box-shadow: 0 15px 25px -5px rgba(139, 132, 244, 0.25);
             border-color: #8b84f4;
         }
 
@@ -96,6 +92,7 @@
         /* Custom Scrollbar for the Board */
         .kanban-container::-webkit-scrollbar {
             height: 10px;
+            cursor: pointer;
         }
         .kanban-container::-webkit-scrollbar-track {
             background: rgba(139, 132, 244, 0.05);
@@ -106,9 +103,11 @@
             background: #8b84f4;
             border-radius: 10px;
             border: 2px solid #f1f0fb;
+            cursor: pointer !important; /* Forces pointer cursor on the scroll bar */
         }
         .kanban-container::-webkit-scrollbar-thumb:hover {
             background: #e07cd0;
+            cursor: pointer !important;
         }
 
         /* Column Styling */
@@ -129,7 +128,7 @@
             box-shadow: 0 4px 12px rgba(139, 132, 244, 0.3);
             color: white;
             transition: 0.2s;
-            border-radius: 8px;
+            cursor: pointer;
         }
 
         .glossy-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
@@ -161,7 +160,7 @@
                 <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                 SYSTEM ACTIVE
             </div>
-            <button onclick="loadBoardData()" class="glossy-btn px-6 py-2.5 rounded-1xl text-xs font-black uppercase tracking-wider">
+            <button onclick="loadBoardData()" class="glossy-btn px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider">
                 <i class="fa-solid fa-arrows-rotate mr-2"></i> Update
             </button>
         </div>
@@ -177,7 +176,7 @@
     <!-- Details Modal Overlay -->
     <div id="modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md hidden z-50 items-center justify-center p-4">
         <div class="glass-panel w-full max-w-lg bg-white p-8 relative shadow-2xl">
-            <button onclick="closeModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors">
+            <button onclick="closeModal()" class="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
                 <i class="fa-solid fa-circle-xmark text-2xl"></i>
             </button>
             <div id="modal-content"></div>
@@ -363,7 +362,7 @@
                         <a href="${d.url}" target="_blank" class="flex-1 glossy-btn text-center py-4 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                             <i class="fa-solid fa-eye"></i> View Live
                         </a>
-                        <button onclick="closeModal()" class="px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                        <button onclick="closeModal()" class="px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-black text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors cursor-pointer">
                             Close
                         </button>
                     </div>
