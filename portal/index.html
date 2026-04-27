@@ -664,10 +664,10 @@
                 
                 // 5. Final Redirect mapping URL params
                 setTimeout(() => {
-                    const finalDest = translations[currentLang].url;
-                    const searchStr = window.location.search || '?portalAccess=true';
-                    window.location.href = finalDest + searchStr;
-                }, 3500);
+    // Uses the unique URL from the Backend!
+    const finalDest = orgData.dashboardUrl || (translations[currentLang].url + window.location.search);
+    window.location.href = finalDest;
+}, 3500);
             }, 1000);
         }
 
