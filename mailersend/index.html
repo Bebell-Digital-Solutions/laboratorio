@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MailerSend</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel to compile JSX in the browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+
+
+
+
+	
+		<!-- ICONS CODE -->
+<script> function removeFromLinks(rel) {
+for (link of document.head.getElementsByTagName("link")) {
+if (link.rel == rel) {
+document.head.removeChild(link);
+}
+};
+}
+function createNewFavicon(rel, img) {
+var newFavicon = document.createElement("link");
+newFavicon.type = "image/png";
+newFavicon.rel = rel;
+newFavicon.href = img;
+var firstHeadElement = document.head.firstChild;
+document.head.insertBefore(newFavicon, firstHeadElement);
+}
+removeFromLinks("icon");
+removeFromLinks("shortcut icon");
+removeFromLinks("apple-touch-icon");
+createNewFavicon("icon", "https://bucket.mlcdn.com/a/3336/3336910/images/5d91c7e05f01c14ce38cacfd85dbfa29b1f6c802.png");
+createNewFavicon("shortcut icon", "https://bucket.mlcdn.com/a/3336/3336910/images/5d91c7e05f01c14ce38cacfd85dbfa29b1f6c802.png");
+createNewFavicon("apple-touch-icon", "https://bucket.mlcdn.com/a/3336/3336910/images/5d91c7e05f01c14ce38cacfd85dbfa29b1f6c802.png"); </script>
+<!-- End ICONS Code -->
+    
+
+
+
+  
+  
+  <!-- Import Maps: Allows us to import React, Icons, and Confetti directly from the web! -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0",
+        "canvas-confetti": "https://esm.sh/canvas-confetti@1.9.2"
+      }
+    }
+  </script>
+
+  <!-- Custom Scrollbar Styles -->
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #8b84f4; }
+    
+    @keyframes bounce-short {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, -10px); }
+    }
+    .animate-bounce-short { animation: bounce-short 0.5s ease-in-out; }
+    
+    .chart-bar { transition: height 1s ease-out; }
+  </style>
+</head>
+<body class="bg-white overflow-hidden">
+  
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useRef, useMemo } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import confetti from 'canvas-confetti';
+    import { 
+      Mail, Settings, FileText, Send, Clock, Paperclip, 
+      Trash2, Plus, Bold, Italic, Underline, List, AlignLeft, 
+      AlignCenter, AlignRight, X, CheckCircle, AlertCircle, 
+      Save, Play, Info, Edit3, Users, Code, Image as ImageIcon, Video,
+      Activity, CheckSquare, History, Link as LinkIcon, MousePointerClick,
+      Award, Medal, Trophy, Crown, Wrench, LayoutDashboard, TrendingUp, BarChart3, PieChart, PenTool
+    } from 'lucide-react';
+
+    // --- CONFIGURATION & COLORS ---
+    const COLORS = {
+      darkBg: '#29225b',
+      lightBg: '#f1f0fb',
+      primary: '#8b84f4',
+      highlight: '#e07cd0',
+      white: '#ffffff',
+      textDark: '#1f1a45',
+      textGray: '#6b7280'
+    };
+
+    const LOGO_URL = 'https://bucket.mlcdn.com/a/3336/3336910/images/5d91c7e05f01c14ce38cacfd85dbfa29b1f6c802.png';
+
+    // --- GOOGLE APPS SCRIPT CODE ---
+    const GAS_CODE = `function doPost(e) {
+  try {
+    var data = JSON.parse(e.postData.contents);
+    
+    if (data.action === "ping") {
+      return ContentService.createTextOutput(JSON.stringify({status: "ok"})).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (data.action === "getAliases") {
+      var aliases = GmailApp.getAliases();
+      var mainEmail = Session.getEffectiveUser().getEmail();
+      if (mainEmail && aliases.indexOf(mainEmail) === -1) {
+        aliases.unshift(mainEmail);
+      }
+      // Filter out any potential blanks
+      aliases = aliases.filter(function(a) { return a && a.length > 0; });
+      return ContentService.createTextOutput(JSON.stringify({aliases: aliases})).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    var to = data.to;
+    var subject = data.subject;
+    var body = data.body;
+    var senderName = data.senderName;
+    var fromAlias = data.fromAlias;
+    var scheduledTime = data.scheduledTime;
+    var attachments = data.attachments || [];
+
+    if (scheduledTime && scheduledTime > new Date().getTime()) {
+       var trigger = ScriptApp.newTrigger("sendScheduled").timeBased().at(new Date(scheduledTime)).create();
+       var props = PropertiesService.getScriptProperties();
+       props.setProperty(trigger.getUniqueId(), JSON.stringify(data));
+       return ContentService.createTextOutput(JSON.stringify({status: "scheduled"})).setMimeType(ContentService.MimeType.JSON);
+    } else {
+       sendMailHelper(data);
+       return ContentService.createTextOutput(JSON.stringify({status: "sent"})).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({error: err.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function sendMailHelper(data) {
+   var blobs = [];
+   if (data.attachments) {
+     data.attachments.forEach(function(att) {
+       blobs.push(Utilities.newBlob(Utilities.base64Decode(att.data), att.mimeType, att.name));
+     });
+   }
+   var options = { htmlBody: data.body };
+   if (data.senderName) options.name = data.senderName;
+   if (data.fromAlias) options.from = data.fromAlias;
+   if (blobs.length > 0) options.attachments = blobs;
+   
+   GmailApp.sendEmail(data.to, data.subject, "", options);
+}
+
+function sendScheduled(e) {
+   var props = PropertiesService.getScriptProperties();
+   var dataStr = props.getProperty(e.triggerUid);
+   if (dataStr) {
+      sendMailHelper(JSON.parse(dataStr));
+      props.deleteProperty(e.triggerUid);
+   }
+   ScriptApp.getProjectTriggers().forEach(function(t) {
+     if (t.getUniqueId() === e.triggerUid) ScriptApp.deleteTrigger(t);
+   });
+}`;
+
+    // --- COMPONENTS ---
+    const Button = ({ children, onClick, variant = 'primary', className = '', type = 'button', disabled = false }) => {
+      const baseStyle = "px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+      const variants = {
+        primary: `bg-[${COLORS.primary}] text-white hover:bg-opacity-90 shadow-md shadow-[#8b84f4]/30`,
+        highlight: `bg-[${COLORS.highlight}] text-white hover:bg-opacity-90 shadow-md shadow-[#e07cd0]/30`,
+        outline: `border-2 border-[${COLORS.primary}] text-[${COLORS.primary}] hover:bg-[${COLORS.lightBg}]`,
+        ghost: `text-[${COLORS.textGray}] hover:bg-gray-100`,
+        danger: `text-red-500 hover:bg-red-50`
+      };
+
+      return (
+        <button type={type} onClick={onClick} disabled={disabled} className={`${baseStyle} ${variants[variant]} ${className}`}>
+          {children}
+        </button>
+      );
+    };
+
+    const AnimatedCounter = ({ value, label, icon: Icon, colorClass, iconPadding = 'p-3' }) => {
+      const [display, setDisplay] = useState(0);
+      
+      useEffect(() => {
+        let start = display;
+        const end = value;
+        const duration = 1000;
+        const startT = performance.now();
+        const step = (now) => {
+          const progress = Math.min((now - startT) / duration, 1);
+          setDisplay(Math.floor(start + (end - start) * progress));
+          if (progress < 1) requestAnimationFrame(step);
+          else setDisplay(end);
+        };
+        requestAnimationFrame(step);
+      }, [value]);
+
+      return (
+        <div className="flex items-center gap-3 bg-white px-4 py-4 rounded-2xl shadow-sm border border-gray-100 flex-1">
+          <div className={`${iconPadding} rounded-xl ${colorClass}`}><Icon size={22} /></div>
+          <div>
+            <div className="text-2xl font-bold text-gray-800 leading-none mb-1">{display}</div>
+            <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider leading-none whitespace-nowrap">{label}</div>
+          </div>
+        </div>
+      );
+    };
+
+    // --- CUSTOM BADGE ICONS ---
+    const BadgeDefault = ({ size, className }) => (
+      <img src="https://bucket.mlcdn.com/a/3336/3336910/images/1fa94decf9808dc7ebb25bee38b94cc4c9c65a84.png" alt="Emails Sent" className={className} style={{ width: size, height: size, objectFit: 'contain' }} />
+    );
+    const BadgeBronze = ({ size, className }) => (
+      <img src="https://bucket.mlcdn.com/a/3336/3336910/images/2beacad4ff4db7fe84448df907631076ae5d153a.png" alt="Bronze Badge" className={className} style={{ width: size, height: size, objectFit: 'contain' }} />
+    );
+    const BadgeSilver = ({ size, className }) => (
+      <img src="https://bucket.mlcdn.com/a/3336/3336910/images/c89c156a2cac09aa58a0d34db8553fd3d5a59e56.png" alt="Silver Badge" className={className} style={{ width: size, height: size, objectFit: 'contain' }} />
+    );
+    const BadgeGold = ({ size, className }) => (
+      <img src="https://bucket.mlcdn.com/a/3336/3336910/images/e05ce0f729d5335dd62dff0e439937332125e9e8.png" alt="Gold Badge" className={className} style={{ width: size, height: size, objectFit: 'contain' }} />
+    );
+    const BadgeDiamond = ({ size, className }) => (
+      <img src="https://bucket.mlcdn.com/a/3336/3336910/images/db45307bfeb4abb0f455cef4c83dfc0ca5ba4b52.png" alt="Diamond Badge" className={className} style={{ width: size, height: size, objectFit: 'contain' }} />
+    );
+
+    const RichTextEditor = ({ value, onChange }) => {
+      const editorRef = useRef(null);
+      const [isHtmlMode, setIsHtmlMode] = useState(false);
+      const [modalConfig, setModalConfig] = useState(null);
+      const [savedRange, setSavedRange] = useState(null);
+      const [modalInputs, setModalInputs] = useState({});
+
+      useEffect(() => {
+        if (!isHtmlMode && editorRef.current && editorRef.current.innerHTML !== value) {
+          editorRef.current.innerHTML = value;
+        }
+      }, [value, isHtmlMode]);
+
+      const execCommand = (command, val = null) => {
+        if (isHtmlMode) return;
+        document.execCommand(command, false, val);
+        editorRef.current.focus();
+        onChange(editorRef.current.innerHTML);
+      };
+
+      const openModal = (type) => {
+        if (isHtmlMode) return;
+        const sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount > 0) {
+          const range = sel.getRangeAt(0);
+          setSavedRange(range);
+          if (type === 'link') setModalInputs({ text: range.toString() });
+          else setModalInputs({});
+        } else {
+          setSavedRange(null);
+          setModalInputs({});
+        }
+        
+        if (type === 'cta') setModalInputs(prev => ({...prev, color: '#8b84f4', text: 'Click Here'}));
+        setModalConfig(type);
+      };
+
+      const handleModalSubmit = (e) => {
+        e.preventDefault();
+        setModalConfig(null);
+        
+        setTimeout(() => {
+          editorRef.current.focus();
+          if (savedRange) {
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(savedRange);
+          }
+
+          if (modalConfig === 'link') {
+            if (modalInputs.text && (!savedRange || savedRange.toString() !== modalInputs.text)) {
+               execCommand('insertHTML', `<a href="${modalInputs.url}" target="_blank">${modalInputs.text}</a>`);
+            } else {
+               execCommand('createLink', modalInputs.url);
+            }
+          } else if (modalConfig === 'cta') {
+            const html = `<div style="text-align:center; margin: 20px 0;"><a href="${modalInputs.url}" target="_blank" style="display:inline-block;background-color:${modalInputs.color};color:#ffffff;padding:12px 24px;text-decoration:none;border-radius:8px;font-weight:bold;font-family:sans-serif;">${modalInputs.text}</a></div><br/>`;
+            execCommand('insertHTML', html);
+          } else if (modalConfig === 'image') {
+            if (modalInputs.base64) {
+              execCommand('insertImage', modalInputs.base64);
+            } else if (modalInputs.url) {
+              execCommand('insertImage', modalInputs.url);
+            }
+          } else if (modalConfig === 'video') {
+            const htmlSnippet = `<a href="${modalInputs.videoUrl}" target="_blank"><img src="${modalInputs.imgUrl}" alt="Watch Video" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" /></a>&nbsp;`;
+            execCommand('insertHTML', htmlSnippet);
+          }
+        }, 10);
+      };
+
+      return (
+        <div className="relative border border-gray-200 rounded-xl overflow-hidden bg-white flex flex-col focus-within:border-[#8b84f4] focus-within:ring-1 focus-within:ring-[#8b84f4] transition-all">
+          {modalConfig && (
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center p-4">
+              <form onSubmit={handleModalSubmit} className="bg-white border border-gray-200 shadow-xl rounded-xl p-5 w-full max-w-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="font-bold text-gray-800 capitalize flex items-center gap-2">
+                    {modalConfig === 'link' && <LinkIcon size={18} className="text-[#8b84f4]" />}
+                    {modalConfig === 'cta' && <MousePointerClick size={18} className="text-[#8b84f4]" />}
+                    {modalConfig === 'image' && <ImageIcon size={18} className="text-[#8b84f4]" />}
+                    {modalConfig === 'video' && <Video size={18} className="text-[#8b84f4]" />}
+                    Insert {modalConfig}
+                  </h4>
+                  <button type="button" onClick={() => setModalConfig(null)} className="text-gray-400 hover:text-gray-700 bg-gray-50 p-1.5 rounded-md"><X size={16}/></button>
+                </div>
+                
+                {modalConfig === 'link' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">URL Link</label>
+                      <input required type="url" placeholder="https://..." className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.url || ''} onChange={e => setModalInputs({...modalInputs, url: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Text to display (optional)</label>
+                      <input type="text" placeholder="Click here" className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.text || ''} onChange={e => setModalInputs({...modalInputs, text: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+
+                {modalConfig === 'cta' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Button Text</label>
+                      <input required type="text" className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.text || ''} onChange={e => setModalInputs({...modalInputs, text: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Button URL</label>
+                      <input required type="url" placeholder="https://..." className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.url || ''} onChange={e => setModalInputs({...modalInputs, url: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Button Color</label>
+                      <input required type="color" className="w-full h-10 p-1 border border-gray-200 rounded-lg cursor-pointer" value={modalInputs.color || '#8b84f4'} onChange={e => setModalInputs({...modalInputs, color: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+
+                {modalConfig === 'image' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Image URL</label>
+                      <input type="url" placeholder="https://..." className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.url || ''} onChange={e => setModalInputs({...modalInputs, url: e.target.value, base64: null})} />
+                    </div>
+                    <div className="relative text-center">
+                      <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-200"></div></div>
+                      <span className="relative bg-white px-2 text-xs font-bold uppercase text-gray-400">OR</span>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Upload Image File directly</label>
+                      <input type="file" accept="image/*" className="w-full text-sm text-gray-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#8b84f4]/10 file:text-[#8b84f4] hover:file:bg-[#8b84f4]/20 cursor-pointer" onChange={(e) => {
+                        const file = e.target.files[0];
+                        if(file) {
+                            const reader = new FileReader();
+                            reader.onload = (evt) => setModalInputs({...modalInputs, base64: evt.target.result, url: ''});
+                            reader.readAsDataURL(file);
+                        }
+                      }} />
+                      {modalInputs.base64 && <div className="text-xs text-emerald-500 font-semibold mt-2 bg-emerald-50 p-2 rounded flex items-center gap-1"><CheckCircle size={14}/> Image attached</div>}
+                    </div>
+                  </div>
+                )}
+
+                {modalConfig === 'video' && (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Thumbnail Image URL</label>
+                      <input required type="url" placeholder="https://..." className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.imgUrl || ''} onChange={e => setModalInputs({...modalInputs, imgUrl: e.target.value})} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">Video Link (YouTube/Vimeo)</label>
+                      <input required type="url" placeholder="https://..." className="w-full text-sm p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#8b84f4] outline-none" value={modalInputs.videoUrl || ''} onChange={e => setModalInputs({...modalInputs, videoUrl: e.target.value})} />
+                    </div>
+                  </div>
+                )}
+
+                <Button type="submit" className="w-full mt-5">Confirm & Insert</Button>
+              </form>
+            </div>
+          )}
+
+          <div className={`bg-[${COLORS.lightBg}] border-b border-gray-200 p-2 flex gap-1 flex-wrap justify-between`}>
+            <div className="flex gap-1 flex-wrap">
+              <button type="button" onClick={() => execCommand('bold')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><Bold size={16} /></button>
+              <button type="button" onClick={() => execCommand('italic')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><Italic size={16} /></button>
+              <button type="button" onClick={() => execCommand('underline')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><Underline size={16} /></button>
+              <div className="w-px h-6 bg-gray-300 mx-1 self-center"></div>
+              <button type="button" onClick={() => execCommand('insertUnorderedList')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><List size={16} /></button>
+              <div className="w-px h-6 bg-gray-300 mx-1 self-center"></div>
+              <button type="button" onClick={() => execCommand('justifyLeft')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><AlignLeft size={16} /></button>
+              <button type="button" onClick={() => execCommand('justifyCenter')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><AlignCenter size={16} /></button>
+              <button type="button" onClick={() => execCommand('justifyRight')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50"><AlignRight size={16} /></button>
+              <div className="w-px h-6 bg-gray-300 mx-1 self-center"></div>
+              <button type="button" onClick={() => openModal('link')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50" title="Insert Link"><LinkIcon size={16} /></button>
+              <button type="button" onClick={() => openModal('cta')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50" title="Insert CTA Button"><MousePointerClick size={16} /></button>
+              <button type="button" onClick={() => openModal('image')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50" title="Insert Image"><ImageIcon size={16} /></button>
+              <button type="button" onClick={() => openModal('video')} disabled={isHtmlMode} className="p-1.5 hover:bg-white rounded text-gray-700 disabled:opacity-50" title="Insert Video"><Video size={16} /></button>
+            </div>
+            <button type="button" onClick={() => setIsHtmlMode(!isHtmlMode)} className={`p-1.5 rounded text-gray-700 transition-colors ${isHtmlMode ? 'bg-[#8b84f4] text-white' : 'hover:bg-white'}`} title="Toggle HTML View"><Code size={16} /></button>
+          </div>
+          {isHtmlMode ? (
+            <textarea 
+              className="p-4 min-h-[300px] w-full outline-none font-mono text-sm text-gray-800 resize-y bg-gray-50" 
+              value={value} 
+              onChange={(e) => onChange(e.target.value)} 
+              placeholder="<!-- Write your HTML here -->"
+            />
+          ) : (
+            <div 
+              ref={editorRef}
+              contentEditable
+              className="p-4 min-h-[300px] max-h-[500px] overflow-y-auto outline-none prose prose-sm max-w-none text-gray-800"
+              onInput={(e) => onChange(e.currentTarget.innerHTML)}
+              onBlur={(e) => onChange(e.currentTarget.innerHTML)}
+            />
+          )}
+        </div>
+      );
+    };
+
+    // --- MAIN APPLICATION ---
+    function App() {
+      const [view, setView] = useState('overview'); // Set default to overview
+      const [gasUrl, setGasUrl] = useState('');
+      const [showSetup, setShowSetup] = useState(false);
+      const [showToolsMenu, setShowToolsMenu] = useState(false);
+      
+      const [templates, setTemplates] = useState([]);
+      const [contacts, setContacts] = useState([]);
+      const [logs, setLogs] = useState([]);
+      const [stats, setStats] = useState({ sent: 0 });
+      
+      const [aliases, setAliases] = useState([]);
+      const [fromAlias, setFromAlias] = useState('');
+      
+      const [editingTemplateId, setEditingTemplateId] = useState(null);
+      
+      const [to, setTo] = useState('');
+      const [senderName, setSenderName] = useState('');
+      const [subject, setSubject] = useState('');
+      const [body, setBody] = useState('');
+      const [attachments, setAttachments] = useState([]);
+      const [scheduleDate, setScheduleDate] = useState('');
+      const [scheduleTime, setScheduleTime] = useState('');
+
+      const [signature, setSignature] = useState('');
+      const [attachSignature, setAttachSignature] = useState(false);
+
+      const [isLoading, setIsLoading] = useState(false);
+      const [notification, setNotification] = useState(null);
+      
+      const [showContactForm, setShowContactForm] = useState(false);
+      const [contactForm, setContactForm] = useState({ id: '', name: '', email: '', business: '', phone: '', tag: '', note: '' });
+
+      const fetchAliases = async (url) => {
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getAliases' }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          });
+          const result = await response.json();
+          if (result.aliases && result.aliases.length > 0) {
+            setAliases(result.aliases);
+            // Default to the first alias in the list
+            setFromAlias(result.aliases[0]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch aliases", err);
+        }
+      };
+
+      useEffect(() => {
+        const savedUrl = localStorage.getItem('mailerSend_gasUrl');
+        if (savedUrl) {
+          setGasUrl(savedUrl);
+          fetchAliases(savedUrl);
+        } else {
+          setShowSetup(true);
+        }
+
+        const savedTemplates = localStorage.getItem('mailerSend_templates');
+        if (savedTemplates) setTemplates(JSON.parse(savedTemplates));
+        
+        const savedContacts = localStorage.getItem('mailerSend_contacts');
+        if (savedContacts) setContacts(JSON.parse(savedContacts));
+
+        const savedLogs = localStorage.getItem('mailerSend_logs');
+        if (savedLogs) setLogs(JSON.parse(savedLogs));
+
+        const savedStats = localStorage.getItem('mailerSend_stats');
+        if (savedStats) setStats(JSON.parse(savedStats));
+
+        const savedSignature = localStorage.getItem('mailerSend_signature');
+        if (savedSignature) setSignature(savedSignature);
+
+        const savedAttachSig = localStorage.getItem('mailerSend_attachSignature');
+        if (savedAttachSig) setAttachSignature(JSON.parse(savedAttachSig));
+      }, []);
+
+      const showNotif = (msg, type = 'success') => {
+        setNotification({ msg, type });
+        setTimeout(() => setNotification(null), 4000);
+      };
+
+      const addLog = (action, details, type = 'info') => {
+        const newLog = { 
+          id: Date.now().toString(), 
+          action, 
+          details, 
+          type, 
+          timestamp: Date.now(),
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' ' + new Date().toLocaleDateString()
+        };
+        setLogs(prev => {
+          const updated = [newLog, ...prev].slice(0, 100); 
+          localStorage.setItem('mailerSend_logs', JSON.stringify(updated));
+          return updated;
+        });
+      };
+
+      const handleSaveGasUrl = (url) => {
+        setGasUrl(url);
+        localStorage.setItem('mailerSend_gasUrl', url);
+        setShowSetup(false);
+        showNotif('Backend URL Saved successfully!');
+        addLog('System', 'Connected new BYOK Backend URL', 'success');
+        
+        fetchAliases(url);
+        
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: [COLORS.primary, COLORS.highlight, '#ffffff']
+        });
+      };
+
+      const saveTemplate = () => {
+        if (!subject && !body) return showNotif('Subject or Body required to save template', 'error');
+        
+        if (editingTemplateId) {
+          const updated = templates.map(t => 
+            t.id === editingTemplateId ? { ...t, name: subject || 'Untitled Template', subject, body, senderName } : t
+          );
+          setTemplates(updated);
+          localStorage.setItem('mailerSend_templates', JSON.stringify(updated));
+          addLog('Template', `Updated template: ${subject || 'Untitled'}`, 'info');
+          showNotif('Template updated successfully!');
+        } else {
+          const newTemplate = {
+            id: Date.now().toString(),
+            name: subject || 'Untitled Template',
+            subject,
+            body,
+            senderName,
+          };
+          const updated = [...templates, newTemplate];
+          setTemplates(updated);
+          localStorage.setItem('mailerSend_templates', JSON.stringify(updated));
+          setEditingTemplateId(newTemplate.id);
+          addLog('Template', `Created new template: ${subject || 'Untitled'}`, 'success');
+          showNotif('Template saved locally!');
+        }
+      };
+
+      const deleteTemplate = (id) => {
+        const updated = templates.filter(t => t.id !== id);
+        setTemplates(updated);
+        localStorage.setItem('mailerSend_templates', JSON.stringify(updated));
+        addLog('Template', `Deleted a template`, 'warning');
+        showNotif('Template deleted');
+      };
+
+      const saveSignature = () => {
+        localStorage.setItem('mailerSend_signature', signature);
+        addLog('Signature', 'Updated email signature', 'info');
+        showNotif('Signature saved successfully!');
+      };
+
+      const saveContact = () => {
+        if (!contactForm.name || !contactForm.email) return showNotif('Name and Email are required', 'error');
+        let updated;
+        if (contactForm.id) {
+          updated = contacts.map(c => c.id === contactForm.id ? contactForm : c);
+          addLog('Contact', `Updated contact: ${contactForm.name}`, 'info');
+          showNotif('Contact updated!');
+        } else {
+          updated = [...contacts, { ...contactForm, id: Date.now().toString() }];
+          addLog('Contact', `Added new contact: ${contactForm.name}`, 'success');
+          showNotif('Contact added!');
+        }
+        setContacts(updated);
+        localStorage.setItem('mailerSend_contacts', JSON.stringify(updated));
+        setShowContactForm(false);
+        setContactForm({ id: '', name: '', email: '', business: '', phone: '', tag: '', note: '' });
+      };
+
+      const deleteContact = (id) => {
+        const updated = contacts.filter(c => c.id !== id);
+        setContacts(updated);
+        localStorage.setItem('mailerSend_contacts', JSON.stringify(updated));
+        addLog('Contact', `Deleted a contact`, 'warning');
+        showNotif('Contact deleted');
+      };
+      
+      const editContact = (contact) => {
+        setContactForm(contact);
+        setShowContactForm(true);
+      };
+
+      const loadTemplate = (template) => {
+        setSubject(template.subject);
+        setBody(template.body);
+        if(template.senderName) setSenderName(template.senderName);
+        setEditingTemplateId(template.id);
+        setView('compose');
+        showNotif('Template loaded');
+      };
+
+      const resetForm = () => {
+        setTo('');
+        setSubject('');
+        setBody('');
+        setSenderName('');
+        if (aliases.length > 0) setFromAlias(aliases[0]);
+        setAttachments([]);
+        setScheduleDate('');
+        setScheduleTime('');
+        setEditingTemplateId(null);
+      };
+
+      const handleFileUpload = (e) => {
+        const files = Array.from(e.target.files);
+        let totalSize = attachments.reduce((acc, file) => acc + file.size, 0);
+        const newAttachments = [];
+        
+        files.forEach(file => {
+          if (totalSize + file.size > 10 * 1024 * 1024) {
+            showNotif(`Skipped ${file.name}: Total size exceeds 10MB limit.`, 'error');
+            return;
+          }
+          totalSize += file.size;
+          
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            newAttachments.push({
+              id: Math.random().toString(36).substr(2, 9),
+              name: file.name,
+              mimeType: file.type,
+              data: event.target.result.split(',')[1],
+              size: file.size
+            });
+            if (newAttachments.length === files.length) {
+               setAttachments(prev => [...prev, ...newAttachments]);
+            }
+          };
+          reader.readAsDataURL(file);
+        });
+      };
+
+      const removeAttachment = (id) => {
+        setAttachments(attachments.filter(a => a.id !== id));
+      };
+
+      const sendEmail = async () => {
+        if (!gasUrl) return setShowSetup(true);
+        if (!to || !subject) return showNotif('Recipient and Subject are required.', 'error');
+
+        setIsLoading(true);
+
+        let scheduledTimestamp = null;
+        if (scheduleDate && scheduleTime) {
+          scheduledTimestamp = new Date(`${scheduleDate}T${scheduleTime}`).getTime();
+          if (scheduledTimestamp <= new Date().getTime()) {
+            setIsLoading(false);
+            return showNotif('Scheduled time must be in the future.', 'error');
+          }
+        }
+
+        let finalBody = body;
+        if (attachSignature && signature) {
+          finalBody += `<br/><br/>${signature}`;
+        }
+
+        const payload = {
+          to,
+          subject,
+          body: finalBody,
+          senderName,
+          fromAlias,
+          attachments: attachments.map(({name, mimeType, data}) => ({name, mimeType, data})),
+          scheduledTime: scheduledTimestamp
+        };
+
+        try {
+          const response = await fetch(gasUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+          });
+
+          const result = await response.json();
+          if (result.error) throw new Error(result.error);
+
+          if (result.status === 'scheduled') {
+            showNotif(`Email scheduled for ${scheduleDate} ${scheduleTime}`);
+            addLog('Email', `Scheduled email to: ${to}`, 'success');
+          } else {
+            showNotif('Email sent successfully!');
+            addLog('Email', `Sent email to: ${to}`, 'success');
+            
+            const newStats = { ...stats, sent: (stats.sent || 0) + 1 };
+            setStats(newStats);
+            localStorage.setItem('mailerSend_stats', JSON.stringify(newStats));
+            
+            if ([1, 10, 50, 100].includes(newStats.sent)) {
+              setTimeout(() => {
+                confetti({
+                  particleCount: 200,
+                  spread: 100,
+                  origin: { y: 0.5 },
+                  colors: [COLORS.primary, COLORS.highlight, '#ffffff', '#FFD700']
+                });
+                showNotif(`Milestone unlocked: ${newStats.sent} emails sent! 🎉`, 'success');
+              }, 500);
+            }
+          }
+
+          setTo('');
+          setAttachments([]);
+          setScheduleDate('');
+          setScheduleTime('');
+        } catch (err) {
+          console.error(err);
+          showNotif('Failed to send. Check Backend URL.', 'error');
+          addLog('Error', `Failed sending email to: ${to}`, 'error');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const clearLogs = () => {
+        if(confirm('Are you sure you want to clear all logs?')) {
+           setLogs([]);
+           localStorage.removeItem('mailerSend_logs');
+           showNotif('Logs cleared');
+        }
+      };
+
+      const getBadgeProps = (count, isTopCounter = false) => {
+        if (count >= 100) return { icon: BadgeDiamond, colorClass: "bg-purple-100", label: "Diamond Sender" };
+        if (count >= 50) return { icon: BadgeGold, colorClass: "bg-yellow-100", label: "Gold Sender" };
+        if (count >= 10) return { icon: BadgeSilver, colorClass: "bg-slate-100", label: "Silver Sender" };
+        
+        if (isTopCounter) {
+           return { icon: BadgeDefault, colorClass: "bg-[#efe6ff]", label: "Emails Sent" };
+        }
+        return { icon: BadgeBronze, colorClass: "bg-[#efe6ff]", label: "Emails Sent" };
+      };
+
+      const topBadgeProps = getBadgeProps(stats.sent || 0, true);
+      const overviewBadgeProps = getBadgeProps(stats.sent || 0, false);
+      const OverviewBadgeIcon = overviewBadgeProps.icon;
+
+      // CHART DATA CALCULATION
+      const activityData = useMemo(() => {
+        const last7Days = Array.from({length: 7}, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (6 - i));
+          return d.toLocaleDateString([], {weekday: 'short'});
+        });
+        
+        const counts = last7Days.map((day, idx) => {
+          const targetDate = new Date();
+          targetDate.setDate(targetDate.getDate() - (6 - idx));
+          const dateStr = targetDate.toLocaleDateString();
+          return logs.filter(l => l.action === 'Email' && l.time.includes(dateStr)).length;
+        });
+
+        const max = Math.max(...counts, 5);
+        return counts.map((count, i) => ({
+          label: last7Days[i],
+          value: count,
+          height: (count / max) * 100
+        }));
+      }, [logs]);
+
+      return (
+        <div className="flex h-screen font-sans text-gray-800 selection:bg-[#e07cd0] selection:text-white">
+          {/* SIDEBAR */}
+          <div className={`w-64 bg-[${COLORS.darkBg}] text-white flex flex-col flex-shrink-0 relative z-10 shadow-xl`}>
+            <div className="p-6 flex items-center gap-3">
+              <img src={LOGO_URL} alt="Logo" className="w-10 h-10 object-contain drop-shadow-md rounded-[7px] bg-white/10 p-1" />
+              <h1 className="text-2xl font-bold tracking-wide">MailerSend</h1>
+            </div>
+            <nav className="flex-1 px-4 py-4 space-y-2">
+              <button onClick={() => setView('overview')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'overview' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <LayoutDashboard size={20} /> <span className="font-medium">Overview</span>
+              </button>
+              <button onClick={() => { setView('compose'); resetForm(); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'compose' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <Send size={20} /> <span className="font-medium">Compose</span>
+              </button>
+              <button onClick={() => setView('templates')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'templates' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <FileText size={20} /> <span className="font-medium">Templates</span>
+              </button>
+              <button onClick={() => setView('signature')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'signature' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <PenTool size={20} /> <span className="font-medium">Signature</span>
+              </button>
+              <button onClick={() => setView('contacts')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'contacts' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <Users size={20} /> <span className="font-medium">Contacts</span>
+              </button>
+              <button onClick={() => setView('logs')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${view === 'logs' ? `bg-[${COLORS.primary}] text-white shadow-lg shadow-[#8b84f4]/20` : 'text-gray-300 hover:bg-white/5'}`}>
+                <Activity size={20} /> <span className="font-medium">Activity Logs</span>
+              </button>
+            </nav>
+            <div className="p-4">
+              <button onClick={() => setShowSetup(true)} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-white/20 text-gray-300 hover:bg-white/10 hover:text-white transition-all">
+                <Settings size={18} /> <span className="text-sm font-medium">Backend Setup</span>
+              </button>
+            </div>
+          </div>
+
+          {/* MAIN CONTAINER */}
+          <div className="flex-1 flex flex-col relative overflow-hidden bg-[#fafafa]">
+            {notification && (
+              <div className={`absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl animate-bounce-short ${notification.type === 'error' ? 'bg-red-500 text-white' : `bg-[${COLORS.primary}] text-white`}`}>
+                {notification.type === 'error' ? <AlertCircle size={20} /> : <CheckCircle size={20} />}
+                <span className="font-medium">{notification.msg}</span>
+              </div>
+            )}
+
+            <header className="min-h-[5rem] py-4 flex items-center justify-between px-8 border-b border-gray-100 bg-white shadow-sm shrink-0">
+              <h2 className="text-2xl font-bold text-gray-800 capitalize">
+                {view === 'overview' ? 'Dashboard Overview' : view === 'compose' ? (editingTemplateId ? 'Edit Message' : 'Create Message') : view}
+              </h2>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex gap-4 my-2">
+                  <AnimatedCounter value={contacts.length} label="Contacts" icon={Users} colorClass="bg-indigo-50 text-indigo-500" iconPadding="p-2.5" />
+                  <AnimatedCounter value={stats.sent || 0} label={topBadgeProps.label} icon={topBadgeProps.icon} colorClass={topBadgeProps.colorClass} iconPadding="p-1.5" />
+                </div>
+
+                {view === 'compose' && (
+                   <div className="relative">
+                     <button onClick={() => setShowToolsMenu(!showToolsMenu)} className="flex items-center justify-center bg-white p-4 border border-gray-100 rounded-2xl shadow-sm hover:bg-gray-50 transition-colors" title="Settings / Tools">
+                       <div className="p-2 bg-[#f1f0fb] text-[#8b84f4] rounded-xl">
+                         <Settings size={22} />
+                       </div>
+                     </button>
+                     {showToolsMenu && (
+                       <>
+                         <div className="fixed inset-0 z-40" onClick={() => setShowToolsMenu(false)}></div>
+                         <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden transform transition-all">
+                           <div className="p-2">
+                             <button 
+                               onClick={() => { resetForm(); setShowToolsMenu(false); }} 
+                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg flex items-center gap-2 font-medium"
+                             >
+                               <Trash2 size={16} /> Clear All
+                             </button>
+                             <div className="px-4 py-2 text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center border-t border-gray-100 mt-1 pt-2">
+                               More tools soon
+                             </div>
+                           </div>
+                         </div>
+                       </>
+                     )}
+                   </div>
+                )}
+                {view === 'logs' && logs.length > 0 && (
+                   <Button variant="ghost" onClick={clearLogs} className="text-sm py-1.5 px-3 text-red-500 hover:bg-red-50">Clear Logs</Button>
+                )}
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto p-8">
+              <div className="max-w-6xl mx-auto">
+                
+                {/* --- OVERVIEW VIEW --- */}
+                {view === 'overview' && (
+                  <div className="space-y-8">
+                    {/* Welcome Banner */}
+                    <div className={`p-8 rounded-3xl bg-[${COLORS.primary}] text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row justify-between items-center gap-6`}>
+                      <div className="relative z-10">
+                        <h3 className="text-3xl font-bold mb-2">Welcome back to MailerSend!</h3>
+                        <p className="opacity-90 max-w-md">Your secure, local-first email control center is ready. You've reached {contacts.length} contacts so far.</p>
+                        <Button variant="highlight" onClick={() => setView('compose')} className="mt-6 !bg-white !text-[#8b84f4]">
+                          <Plus size={18} /> Compose New Email
+                        </Button>
+                      </div>
+                      <div className="relative z-10 bg-white/20 p-6 rounded-2xl backdrop-blur-md flex flex-col items-center">
+                        <OverviewBadgeIcon size={48} className="mb-2 drop-shadow-md" />
+                        <span className="text-xs font-bold uppercase tracking-widest opacity-80">Rank</span>
+                        <span className="text-xl font-black">{overviewBadgeProps.label}</span>
+                      </div>
+                      {/* Decorative Geometric Elements */}
+                      <div className="absolute top-0 left-0 w-32 h-32 bg-white opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+                      <div className="absolute bottom-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full translate-x-1/4 translate-y-1/4"></div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <AnimatedCounter value={contacts.length} label="Total Reach" icon={Users} colorClass="bg-blue-50 text-blue-600" />
+                      <AnimatedCounter value={templates.length} label="Templates" icon={FileText} colorClass="bg-orange-50 text-orange-600" />
+                      <AnimatedCounter value={logs.length} label="Total Actions" icon={Activity} colorClass="bg-purple-50 text-purple-600" />
+                      <AnimatedCounter value={aliases.length} label="Active Aliases" icon={Mail} colorClass="bg-emerald-50 text-emerald-600" />
+                    </div>
+
+                    {/* Charts Row */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      {/* Sending Activity Bar Chart */}
+                      <div className="lg:col-span-2 bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-8">
+                          <h4 className="font-bold text-gray-700 flex items-center gap-2"><TrendingUp size={20} className="text-[#8b84f4]" /> Sending Activity</h4>
+                          <span className="text-xs font-bold text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-widest">Last 7 Days</span>
+                        </div>
+                        <div className="flex items-end justify-between h-48 gap-4 px-4">
+                          {activityData.map((day, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-3">
+                              <div className="relative group w-full">
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                  {day.value} emails
+                                </div>
+                                <div 
+                                  className={`chart-bar w-full rounded-t-xl bg-[${COLORS.primary}] group-hover:bg-[${COLORS.highlight}] cursor-help shadow-sm`}
+                                  style={{ height: `${Math.max(day.height, 5)}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-[10px] font-bold text-gray-400 uppercase">{day.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Distribution / Quick Info Card */}
+                      <div className={`bg-[${COLORS.lightBg}] p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between`}>
+                        <div>
+                          <h4 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><PieChart size={20} className="text-[#e07cd0]" /> Quick Insights</h4>
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-500">Contact Segments</span>
+                              <span className="font-bold">{[...new Set(contacts.map(c => c.tag))].filter(Boolean).length} tags</span>
+                            </div>
+                            <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden">
+                              <div className={`bg-[${COLORS.primary}] h-full`} style={{width: '65%'}}></div>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-500">Template Usage</span>
+                              <span className="font-bold">{templates.length > 0 ? 'Optimal' : 'Low'}</span>
+                            </div>
+                            <div className="w-full bg-white/50 h-2 rounded-full overflow-hidden">
+                              <div className={`bg-[${COLORS.highlight}] h-full`} style={{width: templates.length > 5 ? '85%' : '30%'}}></div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-white p-4 rounded-2xl mt-6 border border-gray-100">
+                           <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Pro Tip</p>
+                           <p className="text-xs text-gray-600 leading-relaxed">Using templates can save you up to 80% of your manual composing time.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Recent Activity List */}
+                    <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="p-6 border-b border-gray-50 flex items-center justify-between">
+                        <h4 className="font-bold text-gray-700 flex items-center gap-2"><History size={20} className="text-[#8b84f4]" /> Recent Events</h4>
+                        <button onClick={() => setView('logs')} className="text-xs font-bold text-[#8b84f4] hover:underline">View All Logs</button>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {logs.slice(0, 5).map(log => (
+                          <div key={log.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-4">
+                              <div className={`p-2 rounded-lg ${log.type === 'success' ? 'bg-emerald-50 text-emerald-500' : 'bg-blue-50 text-blue-500'}`}>
+                                {log.action === 'Email' ? <Send size={14} /> : <Activity size={14} />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-gray-800">{log.details}</p>
+                                <p className="text-[10px] text-gray-400 font-medium uppercase">{log.action} • {log.time}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        {logs.length === 0 && (
+                          <div className="p-12 text-center text-gray-400 italic text-sm">No activity recorded yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- COMPOSE VIEW --- */}
+                {view === 'compose' && (
+                  <div className="space-y-6">
+                    <div className={`bg-[${COLORS.lightBg}] p-6 rounded-2xl border border-gray-100 shadow-sm space-y-4`}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-semibold text-gray-600">To <span className="text-gray-400 font-normal">(Comma separated)</span></label>
+                            {contacts.length > 0 && (
+                               <select 
+                                 className="text-xs border border-gray-200 rounded p-1 text-gray-600 bg-white outline-none cursor-pointer"
+                                 onChange={(e) => {
+                                   if(e.target.value) {
+                                     setTo(to ? `${to}, ${e.target.value}` : e.target.value);
+                                     e.target.value = "";
+                                   }
+                                 }}
+                               >
+                                 <option value="">+ Insert Contact</option>
+                                 {contacts.map(c => <option key={c.id} value={c.email}>{c.name}</option>)}
+                               </select>
+                            )}
+                          </div>
+                          <input type="text" value={to} onChange={(e) => setTo(e.target.value)} placeholder="recipient@example.com" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white" />
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="block text-sm font-semibold text-gray-600">Sender Info <span className="text-gray-400 font-normal">(Alias & Name)</span></label>
+                          </div>
+                          <div className="flex gap-2">
+                            {aliases.length > 0 && (
+                               <select 
+                                 value={fromAlias} 
+                                 onChange={e => setFromAlias(e.target.value)} 
+                                 className="w-1/2 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white text-sm truncate"
+                               >
+                                 {aliases.map(a => <option key={a} value={a}>{a}</option>)}
+                               </select>
+                            )}
+                            <input type="text" value={senderName} onChange={(e) => setSenderName(e.target.value)} placeholder="Display Name (Optional)" className={`${aliases.length > 0 ? 'w-1/2' : 'w-full'} px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#e07cd0] bg-white text-sm`} />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-600 mb-1">Subject</label>
+                        <input type="text" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Exciting News Inside!" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white font-medium text-lg" />
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-1 rounded-2xl">
+                      <div className="flex items-center justify-between mb-2 px-1">
+                        <label className="block text-sm font-semibold text-gray-600">Message Body</label>
+                        <label className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            checked={attachSignature} 
+                            onChange={e => {
+                              setAttachSignature(e.target.checked);
+                              localStorage.setItem('mailerSend_attachSignature', e.target.checked);
+                            }} 
+                            className="w-4 h-4 text-[#8b84f4] border-gray-300 rounded focus:ring-[#8b84f4]"
+                          />
+                          <span className="text-sm font-medium text-gray-500 group-hover:text-gray-700 transition-colors">Attach Signature</span>
+                        </label>
+                      </div>
+                      <RichTextEditor value={body} onChange={setBody} />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className={`bg-[${COLORS.lightBg}] p-5 rounded-2xl border border-gray-100 shadow-sm`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="text-sm font-semibold text-gray-600 flex items-center gap-2"><Paperclip size={16} /> Attachments</label>
+                          <label className="cursor-pointer text-sm font-medium text-[#8b84f4] hover:text-[#e07cd0] flex items-center gap-1"><Plus size={16}/> Add File
+                            <input type="file" multiple className="hidden" onChange={handleFileUpload} />
+                          </label>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {attachments.length === 0 ? <p className="text-sm text-gray-400 italic">No files attached.</p> : attachments.map(att => (
+                            <div key={att.id} className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 text-sm shadow-sm group">
+                              <span className="truncate max-w-[120px]">{att.name}</span>
+                              <span className="text-gray-400 text-xs">({(att.size/1024).toFixed(0)}kb)</span>
+                              <button onClick={() => removeAttachment(att.id)} className="text-red-400 opacity-0 group-hover:opacity-100"><X size={14} /></button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className={`bg-[${COLORS.lightBg}] p-5 rounded-2xl border border-gray-100 shadow-sm`}>
+                        <label className="text-sm font-semibold text-gray-600 flex items-center gap-2 mb-3"><Clock size={16} /> Schedule Email</label>
+                        <div className="flex gap-3">
+                          <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="flex-1 px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white text-sm" />
+                          <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} className="flex-1 px-3 py-2 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white text-sm" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="flex gap-3">
+                        <Button variant="outline" onClick={saveTemplate} className="!border-gray-300 !text-gray-600 hover:!bg-gray-50">
+                          {editingTemplateId ? <><Edit3 size={18} /> Update Template</> : <><Save size={18} /> Save as Template</>}
+                        </Button>
+                        {editingTemplateId && <Button variant="ghost" onClick={() => { setEditingTemplateId(null); saveTemplate(); }}>Save as New</Button>}
+                      </div>
+                      <Button variant="primary" onClick={sendEmail} disabled={isLoading} className="px-8 py-3 text-lg">
+                        {isLoading ? <span className="animate-pulse">Processing...</span> : (scheduleDate && scheduleTime) ? <><Clock size={20} /> Schedule Message</> : <><Play size={20} /> Send Now</>}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- TEMPLATES VIEW --- */}
+                {view === 'templates' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {templates.map(tpl => (
+                      <div key={tpl.id} className="bg-white border border-gray-200 rounded-2xl p-5 hover:shadow-xl hover:border-[#8b84f4] transition-all flex flex-col group">
+                        <div className="flex-1 mb-4">
+                          <h4 className="font-bold text-lg text-gray-800 mb-1 truncate">{tpl.subject || '(No Subject)'}</h4>
+                          <p className="text-xs font-semibold text-[#e07cd0] mb-3">Sender: {tpl.senderName || 'Default'}</p>
+                          <div className="text-sm text-gray-500 line-clamp-3 bg-gray-50 p-3 rounded-xl border border-gray-100" dangerouslySetInnerHTML={{__html: tpl.body || '<i>Empty body</i>'}}></div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
+                          <Button variant="primary" className="flex-1 py-2 text-sm" onClick={() => loadTemplate(tpl)}>Edit / Use</Button>
+                          <Button variant="danger" className="p-2" onClick={() => deleteTemplate(tpl.id)}><Trash2 size={18} /></Button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="border-2 border-dashed border-gray-200 rounded-2xl p-5 flex flex-col items-center justify-center gap-4 text-gray-400 hover:border-[#8b84f4] hover:text-[#8b84f4] transition-all cursor-pointer min-h-[200px]" onClick={() => setView('compose')}>
+                       <Plus size={32} />
+                       <span className="font-bold">Create New Template</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- SIGNATURE VIEW --- */}
+                {view === 'signature' && (
+                  <div className="space-y-6">
+                    <div className={`bg-[${COLORS.lightBg}] p-8 rounded-3xl border border-gray-100 shadow-sm`}>
+                      <div className="flex items-center gap-4 mb-6">
+                        <div className={`p-3 bg-[${COLORS.primary}] text-white rounded-xl shadow-md`}><PenTool size={24} /></div>
+                        <div>
+                          <h3 className="text-2xl font-bold text-gray-800">Your Email Signature</h3>
+                          <p className="text-sm text-gray-500">Create a professional signature to append to your outgoing emails.</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-white rounded-2xl p-2 shadow-sm border border-gray-100 mb-6">
+                        <RichTextEditor value={signature} onChange={setSignature} />
+                      </div>
+                      
+                      <div className="flex justify-end border-t border-gray-200 pt-6">
+                        <Button variant="primary" onClick={saveSignature} className="px-8 py-3">
+                          <Save size={18} /> Save Signature
+                        </Button>
+                      </div>
+                    </div>
+
+                    {signature && (
+                      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                        <h4 className="font-bold text-gray-400 mb-6 text-xs uppercase tracking-widest flex items-center gap-2"><CheckCircle size={16} className="text-[#8b84f4]"/> Signature Preview</h4>
+                        <div className="p-6 rounded-2xl border border-dashed border-gray-300 bg-gray-50">
+                           <div className="prose prose-sm max-w-none text-gray-800" dangerouslySetInnerHTML={{__html: signature}}></div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* MailerSign Promotional Banner */}
+                    <div className="w-full mt-4 hover:opacity-95 hover:scale-[1.01] transition-all duration-200">
+                      <a href="https://mailersign.pro" target="_blank" rel="noopener noreferrer" className="block w-full">
+                        <img 
+                          src="https://dummyimage.com/1200x200/e07cd0/ffffff.png&text=Click+Here+to+Upgrade+with+MailerSign.pro" 
+                          alt="Discover MailerSign.pro" 
+                          className="w-full h-auto rounded-3xl shadow-sm border border-gray-100 object-cover"
+                        />
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* --- CONTACTS VIEW --- */}
+                {view === 'contacts' && (
+                  <div>
+                    <div className="flex justify-between items-center mb-6">
+                      <p className="text-gray-600">Manage your recipients. You can quickly insert them when composing.</p>
+                      <Button onClick={() => { setContactForm({ id: '', name: '', email: '', business: '', phone: '', tag: '', note: '' }); setShowContactForm(true); }}><Plus size={18} /> Add Contact</Button>
+                    </div>
+
+                    {contacts.length === 0 ? (
+                      <div className="text-center py-20 bg-white border border-gray-200 rounded-2xl">
+                        <div className={`w-20 h-20 bg-[${COLORS.lightBg}] rounded-full flex items-center justify-center mx-auto mb-6 text-[${COLORS.primary}]`}><Users size={40} /></div>
+                        <h3 className="text-xl font-bold text-gray-700 mb-2">No Contacts Yet</h3>
+                        <p className="text-gray-500">Add contacts to easily select them when composing emails.</p>
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-sm text-gray-600 min-w-[600px]">
+                            <thead className={`bg-[${COLORS.lightBg}] text-gray-700`}>
+                              <tr>
+                                <th className="px-6 py-4 font-semibold">Name</th>
+                                <th className="px-6 py-4 font-semibold">Email</th>
+                                <th className="px-6 py-4 font-semibold">Business</th>
+                                <th className="px-6 py-4 font-semibold">Tag</th>
+                                <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                              {contacts.map(c => (
+                                <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                                  <td className="px-6 py-4 font-medium text-gray-800">{c.name}</td>
+                                  <td className="px-6 py-4">{c.email}</td>
+                                  <td className="px-6 py-4">{c.business || '-'}</td>
+                                  <td className="px-6 py-4">
+                                    {c.tag && <span className="px-2 py-1 bg-[#8b84f4]/10 text-[#8b84f4] rounded-lg text-xs font-medium border border-[#8b84f4]/20">{c.tag}</span>}
+                                  </td>
+                                  <td className="px-6 py-4 text-right flex justify-end gap-3">
+                                    <button onClick={() => editContact(c)} className="text-[#8b84f4] hover:text-[#e07cd0] transition-colors"><Edit3 size={18} /></button>
+                                    <button onClick={() => deleteContact(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 size={18} /></button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+
+                    {showContactForm && (
+                      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#29225b]/80 backdrop-blur-sm">
+                        <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden border border-[#8b84f4]/20">
+                          <div className={`bg-[${COLORS.lightBg}] p-6 border-b border-gray-100 flex items-center justify-between`}>
+                            <h3 className="text-xl font-bold text-gray-800">{contactForm.id ? 'Edit Contact' : 'New Contact'}</h3>
+                            <button onClick={() => setShowContactForm(false)} className="text-gray-400 hover:text-gray-700 bg-white p-2 rounded-full shadow-sm"><X size={20} /></button>
+                          </div>
+                          <div className="p-6 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Name *</label>
+                                <input type="text" value={contactForm.name} onChange={e => setContactForm({...contactForm, name: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4]" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Email *</label>
+                                <input type="email" value={contactForm.email} onChange={e => setContactForm({...contactForm, email: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4]" />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Business Name</label>
+                                <input type="text" value={contactForm.business} onChange={e => setContactForm({...contactForm, business: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4]" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-600 mb-1">Phone Number</label>
+                                <input type="text" value={contactForm.phone} onChange={e => setContactForm({...contactForm, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4]" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-600 mb-1">Tag (e.g. VIP, Client)</label>
+                              <input type="text" value={contactForm.tag} onChange={e => setContactForm({...contactForm, tag: e.target.value})} placeholder="e.g. New Lead" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4]" />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-600 mb-1">Note</label>
+                              <textarea value={contactForm.note} onChange={e => setContactForm({...contactForm, note: e.target.value})} rows="3" className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] resize-none"></textarea>
+                            </div>
+                            <div className="pt-4 border-t border-gray-100 flex justify-end gap-3 mt-2">
+                              <Button variant="ghost" onClick={() => setShowContactForm(false)}>Cancel</Button>
+                              <Button onClick={saveContact}>Save Contact</Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* --- LOGS VIEW --- */}
+                {view === 'logs' && (
+                  <div className="bg-white border border-gray-200 rounded-3xl overflow-hidden shadow-sm">
+                    <table className="w-full text-left text-sm text-gray-600 min-w-[600px]">
+                      <thead className={`bg-[${COLORS.lightBg}] text-gray-700`}>
+                        <tr>
+                          <th className="px-6 py-4 font-semibold w-1/4">Time</th>
+                          <th className="px-6 py-4 font-semibold w-1/4">Category</th>
+                          <th className="px-6 py-4 font-semibold w-2/4">Details</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {logs.map(log => {
+                          const getBadgeColors = (type) => {
+                            if(type === 'success') return 'bg-emerald-50 text-emerald-600 border-emerald-200';
+                            if(type === 'error') return 'bg-red-50 text-red-600 border-red-200';
+                            if(type === 'warning') return 'bg-orange-50 text-orange-600 border-orange-200';
+                            return 'bg-blue-50 text-blue-600 border-blue-200';
+                          };
+                          return (
+                            <tr key={log.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 text-xs whitespace-nowrap font-medium text-gray-400">{log.time}</td>
+                              <td className="px-6 py-4">
+                                <span className={`px-2.5 py-1 rounded-md text-xs font-semibold border ${getBadgeColors(log.type)} uppercase tracking-widest`}>
+                                  {log.action}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-semibold text-gray-700">{log.details}</td>
+                            </tr>
+                          );
+                        })}
+                        {logs.length === 0 && (
+                          <tr><td colSpan="3" className="px-6 py-20 text-center text-gray-400 italic">No activity logs recorded yet.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+              </div>
+            </main>
+          </div>
+
+          {/* SETUP MODAL */}
+          {showSetup && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#29225b]/80 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-[#8b84f4]/20">
+                <div className={`bg-[${COLORS.lightBg}] p-6 border-b border-gray-100 flex items-center justify-between`}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 bg-[${COLORS.primary}] text-white rounded-xl shadow-md`}><Settings size={24} /></div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-800">Bring Your Own Key</h3>
+                      <p className="text-sm text-gray-500">Connect your personal Google Apps Script backend</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setShowSetup(false)} className="text-gray-400 hover:text-gray-700 bg-white p-2 rounded-full shadow-sm"><X size={20} /></button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-1 space-y-6 text-sm text-gray-700">
+                  <div className={`p-4 rounded-xl border border-[#8b84f4]/30 bg-[#8b84f4]/5 text-[#29225b] flex gap-3`}>
+                    <Info className="shrink-0 text-[#8b84f4]" />
+                    <p>MailerSend runs locally on your browser. To send emails via Gmail, create a simple script in your Google Account. <b>Your data never leaves your device except directly to your Google account.</b></p>
+                  </div>
+
+                  <div className="aspect-video w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm bg-black/5">
+                    <iframe 
+                      width="100%" 
+                      height="100%" 
+                      src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE" 
+                      title="Setup Instructions Video" 
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 flex items-center gap-2"><span className={`bg-[${COLORS.highlight}] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs`}>1</span> Create the Script</h4>
+                    <p className="text-xs font-semibold text-red-500 mb-2">⚠️ Note: If you connected previously, copy and deploy the NEW script code to unlock Aliases!</p>
+                    <div className="relative">
+                      <textarea readOnly value={GAS_CODE} className="w-full h-48 bg-gray-900 text-green-400 font-mono text-xs p-4 rounded-xl focus:outline-none"/>
+                      <Button variant="primary" className="absolute top-3 right-3 text-xs py-1 px-3 shadow-none border border-white/20" onClick={() => { navigator.clipboard.writeText(GAS_CODE); showNotif('Code copied to clipboard!'); }}>Copy Code</Button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 flex items-center gap-2"><span className={`bg-[${COLORS.highlight}] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs`}>2</span> Deploy as Web App</h4>
+                    <ol className="list-decimal pl-5 space-y-2 text-gray-600">
+                      <li>Click <b>Deploy</b> > <b>New deployment</b>.</li>
+                      <li>Select type <b>Web app</b>.</li>
+                      <li>Set "Who has access" to <b>Anyone</b>.</li>
+                      <li>Click <b>Deploy</b> and copy the <b>Web app URL</b>.</li>
+                    </ol>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-lg mb-3 flex items-center gap-2"><span className={`bg-[${COLORS.highlight}] text-white w-6 h-6 rounded-full flex items-center justify-center text-xs`}>3</span> Connect MailerSend</h4>
+                    <div className="pl-8 flex gap-3">
+                      <input type="url" defaultValue={gasUrl} id="gasUrlInput" placeholder="https://script.google.com/macros/s/..." className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#8b84f4] bg-white font-mono text-xs" />
+                      <Button variant="primary" onClick={() => {
+                        const url = document.getElementById('gasUrlInput').value;
+                        if(url.includes('script.google.com')) handleSaveGasUrl(url);
+                        else showNotif('Please enter a valid Google Script URL', 'error');
+                      }}>Save Key</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
