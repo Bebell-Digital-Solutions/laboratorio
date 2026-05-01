@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modular Dashboard Interface</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+   <!-- ========================================== -->
+    <!-- STORAGE VALIDATION & RECOVERY SYSTEM -->
+    <!-- ========================================== -->
+    <script>
+        const APP_VERSION = "2.0.1";
+        
+        function validateAndFixStorage() {
+            try {
+                const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+                const storedVersion = localStorage.getItem('app_version');
+                
+                let needsClear = false;
+                
+                if (storedVersion !== APP_VERSION) {
+                    console.log("Version mismatch - clearing old data");
+                    needsClear = true;
+                }
+                
+                const savedConfig = localStorage.getItem(`nexus_dash_config_${uid}`);
+                if (savedConfig && !needsClear) {
+                    try {
+                        const config = JSON.parse(savedConfig);
+                        if (!config.user || !config.user.email || !config.theme) {
+                            console.log("Corrupted config detected - clearing");
+                            needsClear = true;
+                        }
+                    } catch (e) {
+                        console.log("Invalid JSON in storage - clearing");
+                        needsClear = true;
+                    }
+                }
+                
+                const savedEmail = localStorage.getItem(`nexus_dash_email_${uid}`);
+                if (savedEmail && !needsClear) {
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (!emailRegex.test(savedEmail)) {
+                        console.log("Invalid email in storage - clearing");
+                        needsClear = true;
+                    }
+                }
+                
+                if (needsClear) {
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.includes('nexus_dash') || key.includes('nexus_tasks') || key === 'app_version') {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    sessionStorage.clear();
+                    localStorage.setItem('app_version', APP_VERSION);
+                    return true;
+                }
+                
+                if (!storedVersion) {
+                    localStorage.setItem('app_version', APP_VERSION);
+                }
+                
+                return false;
+            } catch (err) {
+                console.warn('Storage validation skipped: Environment restricts localStorage access.');
+                return false;
+            }
+        }
+        
+        const wasCleared = validateAndFixStorage();
+        try {
+            if (wasCleared && !sessionStorage.getItem('reload_done')) {
+                sessionStorage.setItem('reload_done', 'true');
+                window.location.reload();
+            }
+        } catch(err) {
+            // Ignore sessionStorage errors in restricted environments
+        }
+    </script>
+
+    <!-- Cal element-click embed code begins -->
+    <script type="text/javascript">
+      (function (C, A, L) { let p = function (a, ar) { a.q.push(ar); }; let d = C.document; C.Cal = C.Cal || function () { let cal = C.Cal; let ar = arguments; if (!cal.loaded) { cal.ns = {}; cal.q = cal.q || []; d.head.appendChild(d.createElement("script")).src = A; cal.loaded = true; } if (ar[0] === L) { const api = function () { p(api, arguments); }; const namespace = ar[1]; api.q = api.q || []; if(typeof namespace === "string"){cal.ns[namespace] = cal.ns[namespace] || api;p(cal.ns[namespace], ar);p(cal, ["initNamespace", namespace]);} else p(cal, ar); return;} p(cal, ar); }; })(window, "https://app.cal.com/embed/embed.js", "init");
+      Cal("init", "consulta-gratuita", {origin:"https://app.cal.com"});
+      Cal.ns["consulta-gratuita"]("ui", {"theme":"light","cssVarsPerTheme":{"light":{"cal-brand":"#e07cd0"},"dark":{"cal-brand":"#e07cd0"}},"hideEventTypeDetails":false,"layout":"month_view"});
+    </script>
+    <!-- Cal element-click embed code ends -->
+
+    <!-- ICONS CODE -->
+    <script> 
+        function removeFromLinks(rel) {
+            for (link of document.head.getElementsByTagName("link")) {
+                if (link.rel == rel) {
+                    document.head.removeChild(link);
+                }
+            };
+        }
+        function createNewFavicon(rel, img) {
+            var newFavicon = document.createElement("link");
+            newFavicon.type = "image/png";
+            newFavicon.rel = rel;
+            newFavicon.href = img;
+            var firstHeadElement = document.head.firstChild;
+            document.head.insertBefore(newFavicon, firstHeadElement);
+        }
+        removeFromLinks("icon");
+        removeFromLinks("shortcut icon");
+        removeFromLinks("apple-touch-icon");
+        createNewFavicon("icon", "https://bucket.mlcdn.com/a/3336/3336910/images/ba48dc6c14746407eea5796b6d07e1b22022eaf4.png");
+        createNewFavicon("shortcut icon", "https://bucket.mlcdn.com/a/3336/3336910/images/ba48dc6c14746407eea5796b6d07e1b22022eaf4.png");
+        createNewFavicon("apple-touch-icon", "https://bucket.mlcdn.com/a/3336/3336910/images/ba48dc6c14746407eea5796b6d07e1b22022eaf4.png"); 
+    </script>
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://cdn.shopify.com/s/files/1/0242/0175/6777/files/logo-animation-bebell-1.gif?v=1777437988">
+
+    <style>
+        :root {
+            --color-sidebar: #1e293b;
+            --color-highlight: #6366f1; 
+            --color-highlight-hover: #4f46e5;
+            --color-highlight-light: #818cf8;
+            --color-mainbg: #f1f5f9;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .modal-enter { animation: fadeIn 0.3s ease-out forwards; }
+        .modal-leave { animation: fadeOut 0.2s ease-in forwards; pointer-events: none; }
+        
+        @keyframes fadeIn { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(8px); } }
+        @keyframes fadeOut { from { opacity: 1; backdrop-filter: blur(8px); } to { opacity: 0; backdrop-filter: blur(0px); display:none;} }
+
+        /* Custom Pulse Animation */
+        .pulse {
+           width: 56px;
+           height: 56px;
+           color: var(--color-highlight);
+           background: radial-gradient(circle at 60% 65%, currentColor 62%, #0000 65%) top left,
+                 radial-gradient(circle at 40% 65%, currentColor 62%, #0000 65%) top right,
+                 linear-gradient(to bottom left, currentColor 42%,#0000 43%) bottom left ,
+                 linear-gradient(to bottom right,currentColor 42%,#0000 43%) bottom right;
+           background-size: 50% 50%;
+           background-repeat: no-repeat;
+           position: relative;
+        }
+
+        .pulse:after {
+           content: "";
+           position: absolute;
+           inset: 0;
+           background: inherit;
+           opacity: 0.4;
+           animation: pl3 1.4s infinite;
+        }
+
+        @keyframes pl3 {
+           to {
+              transform: scale(1.8);
+              opacity: 0;
+           }
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sidebar: 'var(--color-sidebar)',
+                        sidebarHover: 'rgba(255, 255, 255, 0.05)',
+                        mainBg: 'var(--color-mainbg)',
+                        highlight: 'var(--color-highlight)',
+                        highlightHover: 'var(--color-highlight-hover)',
+                        highlightLight: 'var(--color-highlight-light)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-screen w-full flex bg-mainBg overflow-hidden font-sans text-gray-800">
+
+    <!-- 1. LINK AUTHENTICATION SCREEN -->
+    <div id="auth-loader" class="fixed inset-0 bg-white z-[200] flex flex-col items-center justify-center p-4 transition-all duration-500">
+        <div id="auth-icon-container" class="relative mb-4 flex items-center justify-center h-[112px] w-[112px]">
+            <div class="pulse" id="auth-spinner"></div>
+            <i data-lucide="shield-alert" class="w-16 h-16 text-red-500 hidden absolute" id="auth-error-icon"></i>
+        </div>
+        <h2 id="loader-title" class="text-xl font-bold text-gray-800" data-i18n="auth_title">Verifying Secure Link...</h2>
+        <p id="loader-subtitle" class="text-gray-500 text-sm mt-2" data-i18n="auth_subtitle">Connecting to dashboard database.</p>
+        <button id="reset-session-btn" onclick="resetSession()" class="hidden mt-6 text-sm text-indigo-600 hover:text-indigo-800 font-medium underline">Try a different account</button>
+    </div>
+
+    <!-- 2. ONBOARDING MODAL OVERLAY -->
+    <div id="onboarding-modal" class="fixed inset-0 bg-slate-900/80 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative">
+            <div class="h-2 w-full bg-indigo-500 transition-colors duration-500" id="modal-top-bar"></div>
+            
+            <button type="button" onclick="toggleAuthLanguage()" class="absolute top-4 right-4 z-10 w-[30px] h-[30px] rounded-full overflow-hidden hover:scale-110 transition-transform shadow-md p-0 border-none bg-transparent cursor-pointer flex items-center justify-center" title="Switch Language">
+                <img src="https://bucket.mlcdn.com/a/3336/3336910/images/59f4fb28eb556a3a92b9f10596cbe9772b92469a.gif" alt="Toggle Language" class="w-full h-full object-cover block">
+            </button>
+
+            <div class="p-8">
+                <div class="flex items-center justify-center mb-6">
+                    <div id="onboarding-logo-container" class="w-20 h-20 bg-sidebar rounded-full flex items-center justify-center text-white shadow-lg border-4 border-white overflow-hidden transition-colors duration-500">
+                        <img id="onboarding-logo" src="" alt="Brand Logo" class="w-full h-full object-contain p-[10px] hidden">
+                        <i data-lucide="user-plus" id="onboarding-icon" class="w-8 h-8"></i>
+                    </div>
+                </div>
+                <h2 class="text-2xl font-bold text-center text-gray-800 mb-2" data-i18n="modal_title">Welcome Aboard</h2>
+                <p class="text-center text-gray-500 mb-8 text-sm" data-i18n="modal_subtitle">Please complete your profile to access this dashboard.</p>
+                
+                <div id="form-error" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl text-center font-medium"></div>
+
+                <div id="auth-success-state" class="hidden flex-col items-center justify-center py-8"></div>
+
+                <form id="onboarding-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4 register-only transition-all">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_fname">First Name</label>
+                            <input type="text" id="fname" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_lname">Last Name</label>
+                            <input type="text" id="lname" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_email">Email Address</label>
+                        <input type="email" id="email" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_phone">Phone Number</label>
+                        <input type="tel" id="phone" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                        <p class="text-[11px] text-gray-500 mt-1 italic register-only transition-all" data-i18n="phone_notice">This information is to validate the identity of the recipient.</p>
+                    </div>
+                    <div class="register-only transition-all">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_position">Position / Role</label>
+                        <input type="text" id="position" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                    </div>
+                    <div class="register-only transition-all">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1" data-i18n="label_lang">Preferred Language</label>
+                        <select id="pref-lang" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all bg-white">
+                            <option value="en">🇺🇸 English</option>
+                            <option value="es">🇪🇸 Español</option>
+                        </select>
+                    </div>
+                    
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-3.5 mt-2 register-only transition-all">
+                        <p class="text-xs text-gray-500 leading-relaxed text-center" data-i18n="confidentiality_notice">
+                            By accessing this presentation, you acknowledge that the information is strictly confidential and intended solely for the respective brand.
+                        </p>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center">
+                        <span id="btn-text" data-i18n="btn_access">Access Dashboard</span>
+                        <i data-lucide="arrow-right" id="btn-icon" class="w-5 h-5 ml-2"></i>
+                        <i data-lucide="loader-2" id="btn-loader" class="w-5 h-5 ml-2 animate-spin hidden"></i>
+                    </button>
+
+                    <p class="text-center text-sm mt-4 font-medium">
+                        <a href="#" id="toggle-auth-mode" onclick="toggleAuthMode(event)" class="text-indigo-600 hover:text-indigo-800 transition-colors" data-i18n="auth_returning">Returning user? Log in here</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. NEW IFRAME MODAL OVERLAY (For Quotes) -->
+    <div id="iframe-modal" class="fixed inset-0 bg-slate-900/80 z-[150] hidden items-center justify-center p-4 sm:p-6 transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[90vh] md:h-[85vh] overflow-hidden flex flex-col relative transition-transform duration-300" id="iframe-modal-content">
+            <!-- Header -->
+            <div class="flex items-center justify-between p-4 md:px-6 border-b border-gray-100 bg-white z-30 shrink-0">
+                <h3 class="font-bold text-gray-800 text-lg flex items-center" id="iframe-modal-title">
+                    <i data-lucide="file-signature" class="w-5 h-5 mr-2 text-highlight"></i> Request a Quote
+                </h3>
+                <button onclick="closeIframeModal()" class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="flex-1 w-full relative bg-gray-50 flex flex-col min-h-0">
+                <div id="modal-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-white z-10">
+                    <div class="pulse mb-4"></div>
+                    <span class="text-sm text-gray-500 font-medium animate-pulse">Loading secure form...</span>
+                </div>
+                <iframe id="modal-iframe" class="w-full flex-1 border-0 absolute inset-0 z-20 opacity-0 transition-opacity duration-500" onload="this.style.opacity='1'; document.getElementById('modal-loader').style.display='none';"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-20 hidden md:hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="fixed md:static inset-y-0 left-0 w-72 bg-sidebar text-gray-300 flex flex-col z-30 transform -translate-x-full md:translate-x-0 transition-transform duration-300 shadow-2xl">
+        
+        <div class="py-6 md:py-8 flex items-center justify-center border-b border-white/10">
+            <img id="dynamic-logo" src="" alt="Brand Logo" class="w-[175px] h-[175px] object-contain transition-transform duration-300 hover:scale-110 cursor-pointer drop-shadow-lg opacity-0 transition-opacity duration-500">
+        </div>
+
+        <nav class="flex-1 py-6 overflow-y-auto" id="nav-container">
+            
+            <div class="px-6 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider" data-i18n="menu_main">Main Menu</div>
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-highlight bg-sidebarHover text-white group" data-template="overview" data-i18n-title="page_overview">
+                <i data-lucide="layout-grid" class="nav-icon w-5 h-5 mr-3 text-highlightLight group-hover:text-highlight transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_overview">Overview</span>
+            </button>
+
+            <!-- DYNAMIC MODULES CONTAINER -->
+            <div id="dynamic-modules-container" class="flex flex-col w-full"></div>
+
+            <div class="px-6 mt-8 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider" data-i18n="menu_support">Support & Contact</div>
+            
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" data-template="support" data-i18n-title="page_support">
+                <i data-lucide="headset" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_support_btn">Online Support</span>
+            </button>
+
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" data-template="chat" data-i18n-title="page_chat">
+                <i data-lucide="message-square" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_chat">Chat Assistant</span>
+            </button>
+            
+            <!-- HARDCODED QUOTES BUTTON -->
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" 
+                    data-modal-iframe="https://api.helpdesk.icu/form/fa1538fa-d812-31f5-bf50-ea1e5d919fa3" 
+                    data-modal-title="quote_title">
+                <i data-lucide="file-signature" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_quotes">Quotes</span>
+            </button>          
+            
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" data-template="consultation" data-cal-link="bebell-digital-solutions/consulta-gratuita" data-cal-namespace="consulta-gratuita" data-cal-config='{"layout":"month_view","useSlotsViewOnSmallScreen":"true","theme":"light"}' data-i18n-title="page_consultation">
+                <i data-lucide="calendar" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_consultation">Book Consultation</span>
+            </button>
+
+            <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" data-template="custom" data-url="https://propuesta.elnegocio.digital/brand-auditor/" data-i18n-title="page_audit">
+                <i data-lucide="clipboard-check" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                <span class="font-medium text-sm" data-i18n="menu_audit">Audit your Brand</span>
+            </button>
+
+        </nav>
+        
+        <div class="relative p-4 border-t border-white/10" id="user-menu-container">
+            <button onclick="toggleUserMenu()" class="w-full flex items-center px-4 py-3 bg-black/20 rounded-xl hover:bg-black/30 transition-colors">
+                <div id="user-initials" class="h-9 w-9 rounded-full bg-highlight flex items-center justify-center text-white font-bold text-sm shrink-0">--</div>
+                <div class="ml-3 overflow-hidden text-left flex-1">
+                    <p id="user-fullname" class="text-sm font-medium text-white truncate">Loading...</p>
+                    <p id="user-role" class="text-xs text-gray-400 truncate">Loading...</p>
+                </div>
+                <i data-lucide="chevron-up" class="w-4 h-4 ml-2 text-gray-400 shrink-0"></i>
+            </button>
+
+            <div id="user-menu" class="hidden absolute bottom-[80px] left-4 right-4 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                <button onclick="resetSession()" class="w-full flex items-center px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium">
+                    <i data-lucide="log-out" class="w-4 h-4 mr-3 text-red-500"></i> <span data-i18n="menu_logout">Log Out</span>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full min-w-0 relative">
+        <header class="h-16 md:h-20 bg-mainBg/80 backdrop-blur-sm flex items-center justify-between px-4 md:px-8 z-10 shrink-0 relative">
+            <div class="flex items-center min-w-0">
+                <button onclick="toggleSidebar()" class="md:hidden mr-3 p-2 md:p-2.5 bg-white rounded-xl shadow-sm border border-gray-200 text-gray-700 hover:text-highlight hover:border-highlight/30 transition-all">
+                    <i data-lucide="menu" class="w-5 h-5 md:w-6 md:h-6"></i>
+                </button>
+                <h1 id="page-title" class="text-xl md:text-2xl font-bold text-gray-800 tracking-tight truncate" data-i18n="page_overview">Overview</h1>
+            </div>
+            
+            <div class="flex items-center space-x-2 md:space-x-4 shrink-0">
+                <a href="https://elnegocio.digital" target="_blank" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-highlight transition-colors"><i data-lucide="home" class="w-4 h-4 md:w-5 md:h-5"></i></a>
+                <a href="https://tienda.bebelldigitalsolutions.com" target="_blank" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-highlight transition-colors"><i data-lucide="shopping-bag" class="w-4 h-4 md:w-5 md:h-5"></i></a>
+                
+                <!-- NOTIFICATIONS DROPUP -->
+                <div class="relative" id="notif-menu-container">
+                    <button onclick="toggleNotifMenu()" class="relative w-9 h-9 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-highlight transition-colors">
+                        <i data-lucide="bell" class="w-4 h-4 md:w-5 md:h-5"></i>
+                        <span id="notif-badge" class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                    </button>
+                    <!-- Modal/Dropdown -->
+                    <div id="notif-menu" class="hidden absolute right-0 mt-2 w-72 md:w-80 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 py-4 z-50">
+                        <div class="px-5 mb-3">
+                            <h3 class="text-sm font-bold text-gray-800" data-i18n="notif_title">Suggested Actions</h3>
+                            <p class="text-xs text-gray-500" data-i18n="notif_sub">Complete these steps to proceed</p>
+                        </div>
+                        <ul class="px-3 space-y-1">
+                            <li id="task-quote" class="flex items-center px-3 py-2.5 text-sm text-gray-600 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                <i data-lucide="circle" class="task-icon w-5 h-5 mr-3 text-gray-300"></i> <span data-i18n="menu_quote">Request a Quote</span>
+                            </li>
+                            <li id="task-consultation" class="flex items-center px-3 py-2.5 text-sm text-gray-600 rounded-xl hover:bg-gray-50 cursor-pointer transition-colors">
+                                <i data-lucide="circle" class="task-icon w-5 h-5 mr-3 text-gray-300"></i> <span data-i18n="menu_consultation">Book Consultation</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- LANGUAGE -->
+                <div class="relative" id="lang-menu-container">
+                    <button onclick="toggleLanguageMenu()" class="w-9 h-9 md:w-10 md:h-10 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-500 hover:text-highlight transition-colors">
+                        <i data-lucide="languages" class="w-4 h-4 md:w-5 md:h-5"></i>
+                    </button>
+                    <div id="language-menu" class="hidden absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 py-2 z-50">
+                        <button onclick="setLanguage('en')" class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-highlight transition-colors flex items-center"><span class="mr-3 text-lg leading-none">🇺🇸</span> English</button>
+                        <button onclick="setLanguage('es')" class="w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-highlight transition-colors flex items-center"><span class="mr-3 text-lg leading-none">🇪🇸</span> Español</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 p-3 pt-0 sm:p-4 sm:pt-0 md:p-8 md:pt-0 overflow-hidden flex flex-col items-center">
+            <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-200/60 flex-1 w-full max-w-[1100px] relative overflow-hidden flex flex-col">
+                <div id="loader" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center transition-opacity duration-300">
+                    <div class="pulse mb-6"></div>
+                    <span class="text-gray-500 font-medium animate-pulse">Loading Module...</span>
+                </div>
+                <iframe id="main-frame" class="w-full h-full border-0 flex-1 bg-white" title="Main Content Area"></iframe>
+            </div>
+        </div>
+
+<script>(function(d, s, id){
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = 'https://api.helpdesk.icu/widget2/load?id=9beb0f70-1f15-33e3-9700-a2b0729f384b&r=' + encodeURIComponent(window.location);
+    fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'anw2-sdk-cA_rmxUf4zOXAKKwcp84Sw'));</script>
+        
+    </main>
+
+    <!-- CORE LOGIC API SCRIPT -->
+    <script>
+        let isInitialized = false;
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // 🔴 PASTE YOUR APP SCRIPT DEPLOYMENT URL HERE:
+        const API_URL = "https://script.google.com/macros/s/AKfycbwRX3698t_naJ2Ff740DQxthe7L6-1Quo5X6vmq5HVadTJP1rAEsdL5NwDY7rtijHZjJw/exec";
+        
+        let appState = { 
+            user: { firstName: '', language: 'en', email: '', phone: '' }, 
+            theme: { highlightColor: '#6366f1', logoUrl: '', bannerUrl: '', sidebarBgColor: '#1e293b', mainBgColor: '#f1f5f9' },
+            stats: { brandId: 0, digitalPresence: 0, conversion: 0 },
+            banner: { title: '', description: '', ctaUrl: '' }
+        };
+        let currentLang = 'en';
+        let userTasks = { quote: false, consultation: false };
+        let isLoginMode = false;
+
+        const i18n = {
+            en: {
+                menu_main: "Main Menu", menu_overview: "Overview", menu_demo: "DEMO BUTTON", menu_modules: "Your Modules",
+                menu_custom: "Custom HTML File", menu_external: "External App Link", menu_support: "Support & Contact",
+                menu_support_btn: "Online Support", page_support: "Online Support",
+                support_title: "Online Support", support_sub: "Submit a ticket or chat with our live agents.",
+                menu_chat: "Chat Assistant", menu_quote: "Request a Quote", menu_quotes: "Quotes", menu_consultation: "Book Consultation",
+                quote_title: "Request a Quote", quote_sub: "Tell us about your project requirements.",
+                menu_audit: "Audit your Brand", menu_logout: "Log Out",
+                page_overview: "Overview", page_demo: "Demo Content", page_chat: "Chat Assistant", page_quotes: "Quotes", page_audit: "Brand Audit",
+                welcome: "Welcome [user's first name], <span class='inline-block origin-[70%_70%] animate-wave'>👋</span>",
+                welcome_sub: "Here you will find global results on an audit our marketing team has completed on your prestigious brand.",
+                brand_id: "Brand Identity", dig_pres: "Digital Presence", conv_rep: "Conversion & Reputation",
+                sit_rep: "Situation Report", sit_rep_sub: "View the latest performance analysis, updated key metrics, and the overall status of the brand in real-time.",
+                open_rep: "Open Report",
+                embed_area: "Embedded Form Area", embed_sub: "Paste your custom form embed code here.",
+                chat_title: "Chat Assistant", chat_sub: "We're here to help! Ask questions, explore features, or get instant support.",
+                consult_title: "Book a Consultation", consult_sub: "Select a date and time that works best for you.",
+                confidentiality_notice: "By accessing this presentation, you acknowledge that the information is strictly confidential and intended solely for the respective brand {{brand_name}}.",
+                auth_title: "Verifying Secure Link...", auth_subtitle: "Connecting to dashboard database.",
+                modal_title: "Welcome Aboard", modal_subtitle: "Please complete your profile to access this dashboard.",
+                label_fname: "First Name", label_lname: "Last Name", label_email: "Email Address",
+                label_phone: "Phone Number", phone_notice: "This information is to validate the identity of the recipient.",
+                label_position: "Position / Role", label_lang: "Preferred Language", btn_access: "Access Dashboard",
+                config_workspace: "Configurando Panel...", play_video: "Play Video",
+                notif_title: "Suggested Actions", notif_sub: "Complete these steps to proceed",
+                auth_returning: "Returning user? Log in here", auth_new: "New user? Register here",
+                auth_login_btn: "Log In", auth_login_sub: "Enter your email and phone to continue."
+            },
+            es: {
+                menu_main: "Menú Principal", menu_overview: "Resumen", menu_demo: "BOTÓN DE PRUEBA", menu_modules: "Tus Módulos",
+                menu_custom: "Archivo HTML", menu_external: "App Externa", menu_support: "Soporte y Contacto",
+                menu_support_btn: "Soporte Online", page_support: "Soporte Online",
+                support_title: "Soporte Online", support_sub: "Envía un ticket o chatea con nuestros agentes.",
+                menu_chat: "Asistente de Chat", menu_quote: "Solicitar Cotización", menu_quotes: "Cotizaciones", menu_consultation: "Agendar Consulta",
+                quote_title: "Solicitar Cotización", quote_sub: "Cuéntanos sobre tu proyecto y requerimientos.",
+                menu_audit: "Auditar tu Marca", menu_logout: "Cerrar Sesión",
+                page_overview: "Resumen", page_demo: "Contenido de Prueba", page_chat: "Asistente de Chat", page_quotes: "Cotizaciones", page_audit: "Auditoría de Marca",
+                welcome: "Bienvenido [user's first name], <span class='inline-block origin-[70%_70%] animate-wave'>👋</span>",
+                welcome_sub: "Aquí encontrará los resultados globales de una auditoría que nuestro equipo de marketing ha completado sobre su prestigiosa marca.",
+                brand_id: "Identidad de Marca", dig_pres: "Presencia Digital", conv_rep: "Conversión y Reputación",
+                sit_rep: "Reporte de Situación", sit_rep_sub: "Visualiza el análisis de rendimiento más reciente y estado general.",
+                open_rep: "Abrir Informe", 
+                embed_area: "Área de Formulario", embed_sub: "Pega aquí tu código de incrustación.",
+                chat_title: "Asistente de Chat", chat_sub: "¡Estamos aquí para ayudar! Haz preguntas o recibe soporte instantáneo.",
+                consult_title: "Agendar Consulta", consult_sub: "Seleccione la fecha y hora que mejor le convenga.",
+                confidentiality_notice: "Al acceder a esta presentation, usted reconoce que la información es estrictamente confidencial y está dirigida exclusivamente a la marca respectiva {{brand_name}}.",
+                auth_title: "Verificando Enlace...", auth_subtitle: "Conectando a la base de datos.",
+                modal_title: "Bienvenido a bordo", modal_subtitle: "Por favor completa tu perfil para acceder al panel.",
+                label_fname: "Nombre", label_lname: "Apellido", label_email: "Correo Electrónico",
+                label_phone: "Número de Teléfono", phone_notice: "Esta información es para validar la identidad del destinatario.",
+                label_position: "Cargo / Rol", label_lang: "Idioma Preferido", btn_access: "Acceder al Panel",
+                config_workspace: "Configurando Panel...", play_video: "Reproducir Video",
+                notif_title: "Acciones Sugeridas", notif_sub: "Completa estos pasos para continuar",
+                auth_returning: "¿Usuario recurrente? Inicia sesión aquí", auth_new: "¿Nuevo usuario? Regístrate aquí",
+                auth_login_btn: "Iniciar Sesión", auth_login_sub: "Ingresa tu correo y teléfono para continuar."
+            }
+        };
+
+        // --- 1. BOOT SEQUENCE & AUTO-LOGIN ---
+        window.onload = async () => {
+            if (isInitialized) return;
+            isInitialized = true;
+
+            let loadingTimeout = setTimeout(() => {
+                const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+                try {
+                    localStorage.removeItem(`nexus_dash_config_${uid}`);
+                    localStorage.removeItem(`nexus_dash_email_${uid}`);
+                } catch(e) {}
+                const loader = document.getElementById('auth-loader');
+                if (loader) loader.style.display = 'none';
+                showOnboarding();
+            }, 10000);
+
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const uid = urlParams.get('uid') || 'mock-dev-id';
+
+                document.getElementById('pref-lang').addEventListener('change', (e) => setLanguage(e.target.value));
+
+                let savedEmail = null;
+                let savedConfigStr = null;
+
+                try {
+                    savedEmail = localStorage.getItem(`nexus_dash_email_${uid}`);
+                    savedConfigStr = localStorage.getItem(`nexus_dash_config_${uid}`);
+                } catch (err) {}
+
+                try {
+                    if (savedConfigStr) {
+                        document.getElementById('loader-subtitle').textContent = "Restoring secure session...";
+                        const localConfig = JSON.parse(savedConfigStr);
+                        setTimeout(() => buildDashboard(localConfig), 600); 
+                        
+                        fetch(API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'autoLogin', uid: uid, email: localConfig.user.email })
+                        }).then(res => res.json()).then(data => {
+                            if (data.config) {
+                                try { localStorage.setItem(`nexus_dash_config_${uid}`, JSON.stringify(data.config)); } catch(e){}
+                            }
+                        }).catch(e => console.log("Offline mode active"));
+
+                    } else if (savedEmail) {
+                        document.getElementById('loader-subtitle').textContent = "Restoring secure session...";
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'autoLogin', uid: uid, email: savedEmail })
+                        });
+                        
+                        if(!response.ok && uid === 'mock-dev-id') throw new Error("Mock");
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            try {
+                                localStorage.removeItem(`nexus_dash_email_${uid}`);
+                                localStorage.removeItem(`nexus_dash_config_${uid}`);
+                            } catch(e){}
+                            throw new Error(data.error);
+                        }
+                        buildDashboard(data.config);
+
+                    } else {
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            body: JSON.stringify({ action: 'getPortalData', uid: uid })
+                        });
+                        if (!response.ok && uid === 'mock-dev-id') throw new Error('Mock Dev Flow Triggered');
+                        const res = await response.json();
+                        
+                        if (res.error) throw new Error(res.error);
+                        
+                        if (res.data) {
+                            if (res.data.dashboardName || res.data.brandName) {
+                                appState.dashboardName = res.data.dashboardName || res.data.brandName;
+                            }
+
+                            if (res.data.logoUrl) {
+                                const logoImg = document.getElementById('onboarding-logo');
+                                const logoIcon = document.getElementById('onboarding-icon');
+                                logoImg.src = res.data.logoUrl;
+                                logoImg.classList.remove('hidden');
+                                logoIcon.classList.add('hidden');
+                            }
+                            
+                            if (res.data.primaryColor) {
+                                document.documentElement.style.setProperty('--color-highlight', res.data.primaryColor);
+                                document.documentElement.style.setProperty('--color-highlight-hover', res.data.primaryColor);
+                            }
+                            if (res.data.sidebarColor) {
+                                document.documentElement.style.setProperty('--color-sidebar', res.data.sidebarColor);
+                            }
+                        }
+                        setLanguage(currentLang);
+                        showOnboarding();
+                    }
+                } catch (err) {
+                    if(uid === 'mock-dev-id' || err.message.includes('Mock')) {
+                       if(savedConfigStr || savedEmail) {
+                           setTimeout(() => buildDashboard(savedConfigStr ? JSON.parse(savedConfigStr) : getDevMockConfig()), 1000);
+                       } else {
+                           const logoImg = document.getElementById('onboarding-logo');
+                           const logoIcon = document.getElementById('onboarding-icon');
+                           
+                           logoImg.src = 'https://cdn.shopify.com/s/files/1/0242/0175/6777/files/logo-animation-bebell-1.gif?v=1777437988';
+                           logoImg.classList.remove('hidden');
+                           logoIcon.classList.add('hidden');
+                           
+                           document.documentElement.style.setProperty('--color-highlight', '#6366f1');
+                           document.documentElement.style.setProperty('--color-sidebar', '#1e293b');
+                           
+                           appState.dashboardName = "Alpha Project Demo";
+                           setLanguage(currentLang);
+
+                           setTimeout(() => showOnboarding(), 1000); 
+                       }
+                    } else {
+                       showAuthError("Access Denied", err.message);
+                    }
+                }
+
+                clearTimeout(loadingTimeout);
+
+            } catch (error) {
+                clearTimeout(loadingTimeout);
+                showAuthError("Error", "Please refresh the page");
+            }
+        };
+
+        function showOnboarding() {
+            document.getElementById('auth-loader').classList.add('modal-leave');
+            const modal = document.getElementById('onboarding-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'modal-enter');
+        }
+
+        function showAuthError(title, sub) {
+            document.getElementById('loader-title').textContent = title;
+            document.getElementById('loader-subtitle').textContent = sub;
+            document.getElementById('auth-spinner').classList.add('hidden');
+            document.getElementById('auth-error-icon').classList.remove('hidden');
+            document.getElementById('reset-session-btn').classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function resetSession() {
+            const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+            try {
+                localStorage.removeItem(`nexus_dash_email_${uid}`);
+                localStorage.removeItem(`nexus_dash_config_${uid}`);
+                localStorage.removeItem(`nexus_tasks_${uid}`);
+            } catch(e) {}
+            window.location.reload();
+        }
+
+        function toggleAuthMode(e) {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            const regFields = document.querySelectorAll('.register-only');
+            regFields.forEach(el => el.classList.toggle('hidden', isLoginMode));
+            
+            document.getElementById('fname').required = !isLoginMode;
+            document.getElementById('lname').required = !isLoginMode;
+            document.getElementById('position').required = !isLoginMode;
+
+            const t = i18n[currentLang];
+            document.getElementById('toggle-auth-mode').textContent = isLoginMode ? (t.auth_new || "New user? Register here") : (t.auth_returning || "Returning user? Log in here");
+            document.getElementById('btn-text').textContent = isLoginMode ? (t.auth_login_btn || "Log In") : t.btn_access;
+            document.querySelector('[data-i18n="modal_subtitle"]').textContent = isLoginMode ? (t.auth_login_sub || "Enter your email and phone to continue.") : t.modal_subtitle;
+        }
+
+        // --- 2. FORM SUBMISSION ---
+        document.getElementById('onboarding-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            document.getElementById('form-error').classList.add('hidden');
+            document.getElementById('btn-text').textContent = i18n[currentLang].config_workspace;
+            document.getElementById('btn-icon').classList.add('hidden');
+            document.getElementById('btn-loader').classList.remove('hidden');
+
+            const formData = {
+                firstName: document.getElementById('fname').value,
+                lastName: document.getElementById('lname').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                position: document.getElementById('position').value,
+                language: document.getElementById('pref-lang').value
+            };
+
+            const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+            const action = isLoginMode ? 'loginUser' : 'submitForm';
+            
+            try {
+                if (isLoginMode) {
+                    document.getElementById('onboarding-form').classList.add('hidden');
+                    const successState = document.getElementById('auth-success-state');
+                    successState.classList.remove('hidden');
+                    successState.classList.add('flex');
+                    successState.innerHTML = `<div class="pulse mb-6 mx-auto"></div><p class="text-center text-gray-600 font-medium animate-pulse">Authenticating...</p>`;
+                }
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: action, uid: uid, formData: formData })
+                });
+
+                if(!response.ok && uid === 'mock-dev-id') throw new Error("Mock");
+                
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                if (isLoginMode) {
+                    const successState = document.getElementById('auth-success-state');
+                    successState.innerHTML = `<div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6"><i data-lucide="check" class="w-10 h-10"></i></div><p class="text-center text-2xl text-gray-800 font-bold">Welcome back, ${data.config.user.firstName}!</p>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    setTimeout(() => { buildDashboard(data.config); triggerConfetti(); }, 1800);
+                } else {
+                    buildDashboard(data.config);
+                    triggerConfetti();
+                }
+
+            } catch (err) {
+                if (uid === 'mock-dev-id' || err.message.includes("Mock")) {
+                    setTimeout(() => {
+                        const mockConfig = getDevMockConfig(formData);
+                        if(isLoginMode) { mockConfig.user.firstName = "Demo"; mockConfig.user.lastName = "User"; }
+                        
+                        if (isLoginMode) {
+                            const successState = document.getElementById('auth-success-state');
+                            successState.innerHTML = `<div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6"><i data-lucide="check" class="w-10 h-10"></i></div><p class="text-center text-2xl text-gray-800 font-bold">Welcome back, ${mockConfig.user.firstName}!</p>`;
+                            if (typeof lucide !== 'undefined') lucide.createIcons();
+                            setTimeout(() => { buildDashboard(mockConfig); triggerConfetti(); }, 1800);
+                        } else {
+                            buildDashboard(mockConfig);
+                            triggerConfetti();
+                        }
+                    }, 1500);
+                } else {
+                    if (isLoginMode) {
+                        document.getElementById('onboarding-form').classList.remove('hidden');
+                        document.getElementById('auth-success-state').classList.add('hidden');
+                        document.getElementById('auth-success-state').classList.remove('flex');
+                    }
+                    document.getElementById('btn-text').textContent = isLoginMode ? (i18n[currentLang].auth_login_btn || "Log In") : i18n[currentLang].btn_access;
+                    document.getElementById('btn-icon').classList.remove('hidden');
+                    document.getElementById('btn-loader').classList.add('hidden');
+                    const errBox = document.getElementById('form-error');
+                    errBox.textContent = err.message;
+                    errBox.classList.remove('hidden');
+                }
+            }
+        });
+
+        function getDevMockConfig(formData = {firstName: 'Demo', lastName: 'User', position: 'CEO', email: 'demo@test.com', phone: '555-0100', language: 'en'}) {
+            return {
+                dashboardName: "Alpha Project Demo",
+                user: { firstName: formData.firstName, lastName: formData.lastName, position: formData.position, email: formData.email, phone: formData.phone, language: formData.language, initials: formData.firstName[0]+formData.lastName[0] },
+                theme: { logoUrl: 'https://bucket.mlcdn.com/a/3336/3336910/images/527b298c694b8315ed185b1a0799cb0802eb9090.png', bannerUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=2070&auto=format&fit=crop', highlightColor: '#6366f1', highlightHover: '#4f46e5', sidebarBgColor: '#1e293b', mainBgColor: '#f1f5f9' },
+                stats: { brandId: 95, digitalPresence: 88, conversion: 76 },
+                banner: { title: 'Q3 Performance Report', description: 'View the latest performance analysis, updated key metrics, and the overall status of the brand in real-time.', ctaUrl: 'https://elnegocio.digital' },
+                buttons: [] 
+            };
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti !== 'undefined') {
+                confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#e07cd0', '#8b84f4'], zIndex: 9999 });
+            }
+        }
+
+        // --- 3. DYNAMIC UI CONSTRUCTION & TASKS ---
+        function buildDashboard(config) {
+            if (!config.theme) config.theme = {};
+            config.theme.logoUrl = config.theme.logoUrl || 'https://cdn.shopify.com/s/files/1/0242/0175/6777/files/logo-animation-bebell-1.gif?v=1777437988';
+            
+            appState = config;
+            const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+            
+            try {
+                localStorage.setItem(`nexus_dash_email_${uid}`, config.user.email);
+                localStorage.setItem(`nexus_dash_config_${uid}`, JSON.stringify(config));
+                const savedTasks = localStorage.getItem(`nexus_tasks_${uid}`);
+                if(savedTasks) userTasks = JSON.parse(savedTasks);
+            } catch(e) {}
+
+            updateNotificationUI();
+            
+            if(config.theme.highlightColor) document.documentElement.style.setProperty('--color-highlight', config.theme.highlightColor);
+            if(config.theme.highlightHover) document.documentElement.style.setProperty('--color-highlight-hover', config.theme.highlightHover);
+            if(config.theme.sidebarBgColor) document.documentElement.style.setProperty('--color-sidebar', config.theme.sidebarBgColor);
+            if(config.theme.mainBgColor) document.documentElement.style.setProperty('--color-mainbg', config.theme.mainBgColor);
+
+            const logo = document.getElementById('dynamic-logo');
+            logo.src = config.theme.logoUrl;
+            logo.classList.remove('opacity-0');
+            
+            document.getElementById('user-initials').textContent = config.user.initials;
+            document.getElementById('user-initials').style.backgroundColor = config.theme.highlightColor;
+            document.getElementById('user-fullname').textContent = `${config.user.firstName} ${config.user.lastName}`;
+            document.getElementById('user-role').textContent = config.user.position;
+            
+            if(config.buttons && Array.isArray(config.buttons) && config.buttons.length > 0) {
+                const container = document.getElementById('dynamic-modules-container');
+                container.innerHTML = ''; 
+                
+                config.buttons.forEach((btn) => {
+                    let icon = btn.icon || 'layers';
+                    if (btn.template === 'consultation') icon = 'calendar';
+
+                    const safeUrl = btn.url || '';
+                    const safeTemplate = btn.template || 'custom';
+                    const safeTitle = btn.title || 'Module';
+
+                    const btnHTML = `
+                    <button class="nav-item w-full flex items-center px-6 py-3.5 text-left transition-all duration-200 border-l-4 border-transparent hover:bg-sidebarHover hover:text-white group text-gray-300" 
+                            data-url="${safeUrl}" data-template="${safeTemplate}" data-title="${safeTitle}">
+                        <i data-lucide="${icon}" class="nav-icon w-5 h-5 mr-3 text-gray-400 group-hover:text-white transition-colors"></i>
+                        <span class="font-medium text-sm truncate">${safeTitle}</span>
+                    </button>`;
+                    container.insertAdjacentHTML('beforeend', btnHTML);
+                });
+            } else {
+                document.getElementById('dynamic-modules-container').innerHTML = '';
+            }
+
+            document.getElementById('auth-loader').classList.add('modal-leave');
+            
+            bindNavEvents();
+            bindTaskEvents();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            const modal = document.getElementById('onboarding-modal');
+            if(!modal.classList.contains('hidden')) modal.classList.replace('modal-enter', 'modal-leave');
+            
+            setLanguage(config.user.language);
+        }
+
+        // --- 4. TEMPLATE HTML GENERATORS ---
+        const getOverviewHTML = () => {
+            const t = i18n[currentLang];
+            const welcomeMsg = t.welcome.replace("[user's first name]", appState.user.firstName);
+            
+            const stat1 = (appState.stats && appState.stats.brandId) ? appState.stats.brandId : 0;
+            const stat2 = (appState.stats && appState.stats.digitalPresence) ? appState.stats.digitalPresence : 0;
+            const stat3 = (appState.stats && appState.stats.conversion) ? appState.stats.conversion : 0;
+
+            const bannerTitle = (appState.banner && appState.banner.title) ? appState.banner.title : `${t.sit_rep} <br/><span style="color: var(--color-highlight); filter: brightness(1.2);">${appState.dashboardName || '[Brand_Name]'}</span>`;
+            const bannerDesc = (appState.banner && appState.banner.description) ? appState.banner.description : t.sit_rep_sub;
+            const bannerCtaUrl = (appState.banner && appState.banner.ctaUrl) ? appState.banner.ctaUrl : '#';
+            const targetAttr = (appState.banner && appState.banner.ctaUrl && appState.banner.ctaUrl !== '#') ? 'target="_blank"' : '';
+            
+            return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <script src="https://unpkg.com/lucide@latest"><\/script>
+                <style> :root { --color-highlight: ${appState.theme.highlightColor}; --color-highlight-hover: ${appState.theme.highlightHover}; } </style>
+                <script> 
+                    tailwind.config = { 
+                        theme: { 
+                            extend: { 
+                                colors: { highlight: 'var(--color-highlight)', highlightHover: 'var(--color-highlight-hover)' },
+                                keyframes: {
+                                    wave: { '0%, 100%': { transform: 'rotate(0.0deg)' }, '10%, 30%': { transform: 'rotate(14.0deg)' }, '20%, 40%': { transform: 'rotate(-8.0deg)' }, '50%': { transform: 'rotate(10.0deg)' }, '60%': { transform: 'rotate(0.0deg)' } }
+                                },
+                                animation: { wave: 'wave 2.5s infinite' }
+                            } 
+                        } 
+                    } 
+                <\/script>
+            </head>
+            <body class="bg-white p-4 sm:p-6 md:p-10 font-sans">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">${welcomeMsg}</h2>
+                <p class="text-sm sm:text-base text-gray-500 mb-6 sm:mb-8">${t.welcome_sub}</p>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                    <div class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="h-10 w-10 sm:h-12 sm:w-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center"><i data-lucide="star" class="w-5 h-5 sm:w-6 sm:h-6"></i></div>
+                            <span class="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">+8%</span>
+                        </div>
+                        <h3 class="text-gray-500 font-medium text-xs sm:text-sm mb-1">${t.brand_id}</h3>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-800 counter" data-target="${stat1}" data-suffix="%">0</p>
+                    </div>
+                    
+                    <div class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="h-10 w-10 sm:h-12 sm:w-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i data-lucide="globe" class="w-5 h-5 sm:w-6 sm:h-6"></i></div>
+                            <span class="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">+14%</span>
+                        </div>
+                        <h3 class="text-gray-500 font-medium text-xs sm:text-sm mb-1">${t.dig_pres}</h3>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-800 counter" data-target="${stat2}" data-suffix="%">0</p>
+                    </div>
+
+                    <div class="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-white border border-purple-100 shadow-sm sm:col-span-2 md:col-span-1">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="h-10 w-10 sm:h-12 sm:w-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center"><i data-lucide="badge-check" class="w-5 h-5 sm:w-6 sm:h-6"></i></div>
+                            <span class="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">+5%</span>
+                        </div>
+                        <h3 class="text-gray-500 font-medium text-xs sm:text-sm mb-1">${t.conv_rep}</h3>
+                        <p class="text-2xl sm:text-3xl font-bold text-gray-800 counter" data-target="${stat3}" data-suffix="%">0</p>
+                    </div>
+                </div>
+
+                <div class="relative w-full min-h-[22rem] sm:min-h-[26rem] md:min-h-[28rem] rounded-2xl overflow-hidden shadow-md flex items-center p-6 sm:p-8 md:p-12 group">
+                    <div class="absolute inset-0 bg-[url('https://bucket.mlcdn.com/a/3336/3336910/images/7c809e7409d5426944da049ed84939b2f3df64a9.png')] bg-cover bg-center transition-transform duration-700 group-hover:scale-105"></div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-slate-900/95 via-slate-900/80 to-transparent"></div>
+
+                    <div class="relative z-10 flex flex-col items-start gap-4 sm:gap-5 max-w-2xl w-full">
+                        <div class="w-[50px] h-[50px] sm:w-[70px] sm:h-[70px] flex items-center justify-center overflow-hidden">
+                            <img src="${appState.theme.logoUrl}" alt="Brand Logo" class="w-full h-full object-contain">
+                        </div>
+
+                        <h2 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white drop-shadow-md tracking-tight mt-1 sm:mt-2">
+                            ${bannerTitle}
+                        </h2>
+
+                        <p class="text-gray-300 text-sm sm:text-base md:text-lg mb-2 sm:mb-4 max-w-xl leading-relaxed">
+                            ${bannerDesc}
+                        </p>
+
+                        <a href="${bannerCtaUrl}" ${targetAttr} class="w-full sm:w-auto inline-block">
+                            <button class="w-full justify-center px-6 py-3 sm:px-8 sm:py-4 mt-2 bg-highlight hover:bg-highlightHover text-white font-bold rounded-xl shadow-lg shadow-highlight/30 transition-all duration-200 flex items-center gap-2 sm:gap-3 text-base sm:text-lg">
+                                <i data-lucide="file-text" class="w-5 h-5"></i> ${t.open_rep}
+                            </button>
+                        </a>
+                    </div>
+                </div>
+
+                <script>
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const counters = document.querySelectorAll('.counter');
+                        counters.forEach(counter => {
+                            const target = parseFloat(counter.getAttribute('data-target'));
+                            const suffix = counter.getAttribute('data-suffix') || '';
+                            const isFloat = counter.hasAttribute('data-float');
+                            const duration = 1500;
+                            const frameRate = 1000 / 60;
+                            const totalFrames = Math.round(duration / frameRate);
+                            let frame = 0;
+                            const easeOutQuad = t => t * (2 - t);
+                            const counterInterval = setInterval(() => {
+                                frame++;
+                                const progress = easeOutQuad(frame / totalFrames);
+                                const currentCount = target * progress;
+                                if (frame >= totalFrames) {
+                                    clearInterval(counterInterval);
+                                    counter.innerText = (isFloat ? target.toFixed(1) : Math.round(target).toLocaleString()) + suffix;
+                                } else {
+                                    counter.innerText = (isFloat ? currentCount.toFixed(1) : Math.round(currentCount).toLocaleString()) + suffix;
+                                }
+                            }, frameRate);
+                        });
+                    });
+                <\/script>
+            </body>
+            </html>`;
+        };
+
+        const getChatHTML = () => { 
+            return `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+            </head>
+            <body class="bg-gray-50 font-sans min-h-screen flex flex-col" style="margin: 0;">
+                <div class="w-full h-64 bg-[url('https://bucket.mlcdn.com/a/3336/3336910/images/b77400b9d29ec1365c1afe7f84ac0ebdf2d4668c.png')] bg-cover bg-center relative shrink-0" style="height: 256px;">
+                    <div class="absolute inset-0 bg-slate-800/80 mix-blend-multiply" style="position: absolute; inset: 0; background-color: rgba(30, 41, 59, 0.8);"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent" style="position: absolute; inset: 0;"></div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 mb-8" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <h2 class="text-4xl font-extrabold text-white mb-3" style="color: white; font-size: 2.25rem; font-weight: 800;">${i18n[currentLang].chat_title}</h2>
+                        <p class="text-white/80 max-w-2xl text-lg" style="color: rgba(255,255,255,0.8); font-size: 1.125rem;">${i18n[currentLang].chat_sub}</p>
+                    </div>
+                </div>
+                <div class="flex-1 px-4 md:px-6 pb-6 md:pb-10 flex justify-center relative z-10 -mt-16 w-full" style="padding-bottom: 2.5rem; margin-top: -4rem; display: flex; justify-content: center; min-height: 0;">
+                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-4xl flex flex-col overflow-hidden" style="background: white; border-radius: 1rem; width: 100%; max-width: 56rem; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); flex: 1;">
+                        <script> window.chatpilotIframeConfig = { chatbotId: "b876518dadf641c386b778fd5a6cb927", domain: "https://asistente.chatterbot.support" } <\/script>
+                        <script src="https://asistente.chatterbot.support/embed.iframe.js" charset="utf-8"><\/script>
+                        <iframe allow="microphone" src="https://asistente.chatterbot.support/chatbot-iframe/b876518dadf641c386b778fd5a6cb927" id="chatbot-iframe" style="width: 100%; flex: 1; height: 100%; min-height: 55vh; border: none; display: block;" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </body>
+            </html>`; 
+        };
+
+        const getSupportHTML = () => { 
+            return `<!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+            </head>
+            <body class="bg-gray-50 font-sans min-h-screen flex flex-col" style="margin: 0;">
+                <div class="w-full h-64 bg-[url('https://bucket.mlcdn.com/a/3336/3336910/images/b77400b9d29ec1365c1afe7f84ac0ebdf2d4668c.png')] bg-cover bg-center relative shrink-0" style="height: 256px;">
+                    <div class="absolute inset-0 bg-slate-800/80 mix-blend-multiply" style="position: absolute; inset: 0; background-color: rgba(30, 41, 59, 0.8);"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-50 to-transparent" style="position: absolute; inset: 0;"></div>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 mb-8" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <h2 class="text-4xl font-extrabold text-white mb-3" style="color: white; font-size: 2.25rem; font-weight: 800;">${i18n[currentLang].support_title}</h2>
+                        <p class="text-white/80 max-w-2xl text-lg" style="color: rgba(255,255,255,0.8); font-size: 1.125rem;">${i18n[currentLang].support_sub}</p>
+                    </div>
+                </div>
+                <div class="flex-1 px-4 md:px-6 pb-6 md:pb-10 flex justify-center relative z-10 -mt-16 w-full" style="padding-bottom: 2.5rem; margin-top: -4rem; display: flex; justify-content: center; min-height: 0;">
+                    <div class="bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-4xl flex flex-col overflow-hidden" style="background: white; border-radius: 1rem; width: 100%; max-width: 56rem; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); flex: 1;">
+                        <iframe src="https://api.helpdesk.icu/embed/ec476ec3-569d-3340-92ae-0ec1ba0aa489" style="width: 100%; flex: 1; height: 100%; min-height: 55vh; border: none; display: block;" frameborder="0"></iframe>
+                    </div>
+                </div>
+            </body>
+            </html>`; 
+        };
+
+        // --- 5. MODAL LOGIC & NAVIGATION ---
+        function openIframeModal(url, title) {
+            const modal = document.getElementById('iframe-modal');
+            const iframe = document.getElementById('modal-iframe');
+            const titleEl = document.getElementById('iframe-modal-title');
+            const loader = document.getElementById('modal-loader');
+            
+            titleEl.innerHTML = `<i data-lucide="file-signature" class="w-5 h-5 mr-2" style="color: var(--color-highlight);"></i> ${title}`;
+            iframe.style.opacity = '0';
+            loader.style.display = 'flex';
+            iframe.src = url;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex', 'modal-enter');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeIframeModal() {
+            const modal = document.getElementById('iframe-modal');
+            const iframe = document.getElementById('modal-iframe');
+            
+            modal.classList.replace('modal-enter', 'modal-leave');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex', 'modal-leave');
+                iframe.src = 'about:blank'; 
+            }, 300);
+        }
+
+        function bindNavEvents() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const mainFrame = document.getElementById('main-frame');
+            const pageTitle = document.getElementById('page-title');
+            const loader = document.getElementById('loader');
+
+            navItems.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+
+                newBtn.addEventListener('click', function() {
+                    const template = this.getAttribute('data-template');
+                    
+                    // 1. CAL.COM INTEGRATION HANDLER
+                    if (this.hasAttribute('data-cal-link') || template === 'consultation') {
+                        loader.classList.add('hidden');
+                        userTasks['consultation'] = true;
+                        const uid = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+                        try { localStorage.setItem(`nexus_tasks_${uid}`, JSON.stringify(userTasks)); } catch(e){}
+                        updateNotificationUI();
+                        return; 
+                    }
+
+                    // 2. MODAL FORM HANDLER (Intercepts both Hardcoded AND Dynamic Quote buttons)
+                    if (this.hasAttribute('data-modal-iframe') || template === 'quote') {
+                        loader.classList.add('hidden');
+                        
+                        userTasks['quote'] = true;
+                        const uid = newSearchParams = new URLSearchParams(window.location.search).get('uid') || 'mock-dev-id';
+                        try { localStorage.setItem(`nexus_tasks_${uid}`, JSON.stringify(userTasks)); } catch(e){}
+                        updateNotificationUI();
+                        
+                        const url = this.getAttribute('data-modal-iframe') || "https://api.helpdesk.icu/form/fa1538fa-d812-31f5-bf50-ea1e5d919fa3";
+                        const titleKey = this.getAttribute('data-modal-title') || 'quote_title';
+                        const title = (i18n[currentLang] && i18n[currentLang][titleKey]) ? i18n[currentLang][titleKey] : i18n[currentLang].quote_title;
+                        
+                        openIframeModal(url, title);
+                        if (window.innerWidth < 768) toggleSidebar();
+                        return; 
+                    }
+
+                    // 3. REGULAR NAVIGATION STYLING
+                    document.querySelectorAll('.nav-item').forEach(b => {
+                        b.classList.remove('border-highlight', 'bg-sidebarHover', 'text-white');
+                        b.classList.add('border-transparent', 'text-gray-300');
+                        const icon = b.querySelector('.nav-icon');
+                        if(icon) { icon.classList.remove('text-highlightLight'); icon.classList.add('text-gray-400'); icon.style.color = ''; }
+                    });
+                    
+                    this.classList.remove('border-transparent', 'text-gray-300');
+                    this.classList.add('border-highlight', 'bg-sidebarHover', 'text-white');
+                    this.style.borderColor = appState.theme.highlightColor;
+                    const thisIcon = this.querySelector('.nav-icon');
+                    if(thisIcon) { 
+                        thisIcon.classList.remove('text-gray-400'); 
+                        thisIcon.classList.add('text-highlightLight');
+                        thisIcon.style.color = appState.theme.highlightColor;
+                    }
+
+                    // 4. TITLE AND FRAME UPDATES
+                    const titleKey = this.getAttribute('data-i18n-title');
+                    const dynamicTitle = this.getAttribute('data-title');
+                    
+                    let newTitle = this.innerText.trim();
+                    if (dynamicTitle) newTitle = dynamicTitle;
+                    if (titleKey && i18n[currentLang] && i18n[currentLang][titleKey]) newTitle = i18n[currentLang][titleKey];
+                    
+                    pageTitle.textContent = newTitle;
+
+                    loader.classList.remove('hidden');
+                    
+                    const url = this.getAttribute('data-url');
+
+                    if (template === 'custom' && url && url !== "undefined" && url.trim() !== "") {
+                        mainFrame.removeAttribute('srcdoc'); 
+                        mainFrame.src = url; 
+                    } else {
+                        mainFrame.removeAttribute('src'); 
+                        if (template === 'overview') mainFrame.srcdoc = getOverviewHTML();
+                        else if (template === 'chat') mainFrame.srcdoc = getChatHTML();
+                        else if (template === 'support') mainFrame.srcdoc = getSupportHTML();
+                    }
+
+                    if(appState.user.email) {
+                        fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'logActivity', email: appState.user.email, activity: `Opened ${pageTitle.textContent}` }) });
+                    }
+
+                    if (window.innerWidth < 768) toggleSidebar();
+                });
+            });
+        }
+
+        function bindTaskEvents() {
+            document.getElementById('task-quote').onclick = () => {
+                const sidebarBtn = document.querySelector('.nav-item[data-modal-iframe]') || document.querySelector('.nav-item[data-template="quote"]');
+                if (sidebarBtn) sidebarBtn.click();
+                toggleNotifMenu();
+            };
+            document.getElementById('task-consultation').onclick = () => {
+                const sidebarBtn = document.querySelector('.nav-item[data-cal-link]') || document.querySelector('.nav-item[data-template="consultation"]');
+                if (sidebarBtn) sidebarBtn.click();
+                toggleNotifMenu();
+            };
+        }
+        
+        function updateNotificationUI() {
+            const badge = document.getElementById('notif-badge');
+            const quoteTask = document.getElementById('task-quote');
+            const consultTask = document.getElementById('task-consultation');
+            
+            let pendingTasks = 0;
+            
+            if (userTasks.quote) {
+                quoteTask.querySelector('i').setAttribute('data-lucide', 'check-circle');
+                quoteTask.querySelector('i').classList.replace('text-gray-300', 'text-green-500');
+            } else { pendingTasks++; }
+
+            if (userTasks.consultation) {
+                consultTask.querySelector('i').setAttribute('data-lucide', 'check-circle');
+                consultTask.querySelector('i').classList.replace('text-gray-300', 'text-green-500');
+            } else { pendingTasks++; }
+            
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            if (pendingTasks === 0) {
+                badge.classList.add('hidden');
+            } else {
+                badge.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('main-frame').addEventListener('load', () => document.getElementById('loader').classList.add('hidden'));
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('mobile-overlay').classList.toggle('hidden');
+        }
+
+        function toggleLanguageMenu() { document.getElementById('language-menu').classList.toggle('hidden'); }
+        
+        function toggleNotifMenu() { document.getElementById('notif-menu').classList.toggle('hidden'); }
+
+        function toggleUserMenu() { document.getElementById('user-menu').classList.toggle('hidden'); }
+
+        function toggleAuthLanguage() {
+            const newLang = currentLang === 'en' ? 'es' : 'en';
+            setLanguage(newLang);
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('language-menu').classList.add('hidden');
+            
+            const langSelect = document.getElementById('pref-lang');
+            if (langSelect && langSelect.value !== lang) langSelect.value = lang;
+            
+            const brand = appState.dashboardName || "";
+            const brandText = brand ? ` <strong class="text-gray-700">${brand}</strong>` : "";
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) {
+                    let text = i18n[lang][key];
+                    if (text.includes('{{brand_name}}')) {
+                        text = text.replace('{{brand_name}}', brandText);
+                    }
+                    el.innerHTML = text; 
+                }
+            });
+
+            const activeBtn = document.querySelector('.nav-item.border-highlight');
+            if (activeBtn && !activeBtn.hasAttribute('data-cal-link') && !activeBtn.hasAttribute('data-modal-iframe') && activeBtn.getAttribute('data-template') !== 'quote') {
+                activeBtn.click();
+            }
+        }
+
+        document.addEventListener('click', (e) => {
+            const langMenu = document.getElementById('language-menu');
+            if (!e.target.closest('#lang-menu-container') && !langMenu.classList.contains('hidden')) langMenu.classList.add('hidden');
+            
+            const notifMenu = document.getElementById('notif-menu');
+            if (!e.target.closest('#notif-menu-container') && !notifMenu.classList.contains('hidden')) notifMenu.classList.add('hidden');
+
+            const userMenu = document.getElementById('user-menu');
+            if (!e.target.closest('#user-menu-container') && !userMenu.classList.contains('hidden')) userMenu.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
