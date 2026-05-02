@@ -293,7 +293,7 @@ function doOptions(e) { return ContentService.createTextOutput("").setMimeType(C
                 const savedSettings = JSON.parse(localStorage.getItem('invoiceAppSettings') || 'null');
                 if (savedSettings) setSettings(savedSettings);
                 
-                const savedCounts = JSON.parse(localStorage.getItem('invoiceDocCounts') || '{"quote":0,"invoice":0,"receipt":0}');
+                const savedCounts = JSON.parse(localStorage.getItem('invoiceDocCounts') || '{"quotes":0,"invoices":0,"receipts":0}');
                 setDocCounts(savedCounts);
             }, []);
 
