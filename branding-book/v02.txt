@@ -270,7 +270,7 @@
                     <div id="page-1" class="brand-page bg-white w-full md:w-[800px] h-auto md:min-h-[1131px] shadow-2xl pb-[110px] md:pb-[130px] flex flex-col gap-4 md:gap-6 relative rounded-[10px] overflow-hidden">
                         
                         <!-- Board Header - No padding to allow full cover -->
-                        <div class="text-center pb-4 md:pb-5 border-b border-gray-100 preview-section shrink-0 overflow-hidden h-[120px] md:h-[180px] mt-[30px]">
+                        <div class="text-center pb-4 md:pb-5 border-b border-gray-100 preview-section shrink-0 overflow-hidden h-[120px] md:h-[180px] mt-[30px] ml-[10px] mr-[10px]">
                             <div class="w-full h-full cursor-pointer flex items-center justify-center" onclick="document.getElementById('upload-logo-primary').click()">
                                 <div id="preview-header-logo-container" class="w-full h-full flex items-center justify-center">
                                     <!-- Logotipo por defecto -->
