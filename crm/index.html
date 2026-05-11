@@ -147,7 +147,7 @@
     // --- TRANSLATION DICTIONARY ---
     const TRANSLATIONS = {
       en: {
-        appTitle: "Project Manager",
+        appTitle: "CRM Light",
         searchPlaceholder: "Search (Cmd+K)",
         manageDesc: "Manage projects, track stages, and monitor relationships.",
         newProject: "New Project",
@@ -206,7 +206,7 @@
         thClient: "Client/Org"
       },
       es: {
-        appTitle: "Gestor de Proyectos",
+        appTitle: "CRM Light",
         searchPlaceholder: "Buscar (Cmd+K)",
         manageDesc: "Gestiona proyectos, rastrea etapas y monitorea relaciones.",
         newProject: "Nuevo Proyecto",
@@ -279,13 +279,13 @@
 
     // --- MOCK DATA ---
     const initialOrganizations = [
-      { id: 'org-1', name: 'Acme Corp', industry: 'Manufacturing', notes: 'Top client', logo: 'https://ui-avatars.com/api/?name=Acme+Corp&background=1e293b&color=fff&size=128' },
+      { id: 'org-1', name: 'Bebell Digital Solutions', industry: 'Technology', notes: 'Headquarters', logo: 'https://cdn.shopify.com/s/files/1/0242/0175/6777/files/logo-animation-bebell-1.gif?v=1777437988' },
       { id: 'org-2', name: 'Globex', industry: 'Technology', notes: '', logo: 'https://ui-avatars.com/api/?name=Globex&background=f59e0b&color=fff&size=128' },
       { id: 'org-3', name: 'Initech', industry: 'Software', notes: 'Requires weekly updates', logo: 'https://ui-avatars.com/api/?name=Initech&background=10b981&color=fff&size=128' },
     ];
 
     const initialContacts = [
-      { id: 'con-1', name: 'Alice Smith', email: 'alice@acme.com', phone: '555-0101', organizationId: 'org-1' },
+      { id: 'con-1', name: 'Aaron Estevés', email: 'soporte@bebelldigitalsolutions.com', phone: '809-620-3970', organizationId: 'org-1' },
       { id: 'con-2', name: 'Bob Jones', email: 'bob@globex.com', phone: '555-0202', organizationId: 'org-2' },
       { id: 'con-3', name: 'Charlie Davis', email: 'charlie@initech.com', phone: '555-0303', organizationId: 'org-3' },
     ];
@@ -308,7 +308,7 @@
         tags: ['design', 'frontend'],
         contactId: 'con-1',
         organizationId: 'org-1',
-        bannerUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=500&q=60',
+        bannerUrl: 'https://bucket.mlcdn.com/a/3336/3336910/images/0b6ec36417ec347065cb890f540edfecb460620d.png',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         customFields: { priority: 'High', estimatedHours: 80, clientBudget: 10000, riskLevel: '3' },
@@ -394,12 +394,12 @@
     const initialReceipts = [{ id: 'rec-1', name: 'REC-001 (Hosting)' }, { id: 'rec-2', name: 'REC-002 (Assets)' }];
 
     const DEFAULT_BANNERS = [
-      'https://bucket.mlcdn.com/a/3336/3336910/images/d74f036eae6ffb549263f9be1ee121854ce471b8.jpeg',
       'https://bucket.mlcdn.com/a/3336/3336910/images/15b6715e08c398cdcd84ccbe25656a1d2e020cd6.jpeg',
-      'https://images.unsplash.com/photo-1557683316-973673baf926?w=500&q=80',
-      'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=500&q=80',
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=500&q=80',
-      'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=500&q=80'
+      'https://bucket.mlcdn.com/a/3336/3336910/images/d74f036eae6ffb549263f9be1ee121854ce471b8.jpeg',
+      'https://bucket.mlcdn.com/a/3336/3336910/images/0b6ec36417ec347065cb890f540edfecb460620d.png',
+      'https://bucket.mlcdn.com/a/3336/3336910/images/641e5fe19aa110a15042cc3594fbda6c112973e0.jpeg',
+      'https://bucket.mlcdn.com/a/3336/3336910/images/7c809e7409d5426944da049ed84939b2f3df64a9.png',
+      'https://bucket.mlcdn.com/a/3336/3336910/images/7fde2c07601126567834885a7b61bd98ca8ecf31.png'
     ];
     const getDefaultBanner = (id) => {
       if (!id) return DEFAULT_BANNERS[0];
